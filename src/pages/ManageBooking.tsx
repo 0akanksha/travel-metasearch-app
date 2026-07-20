@@ -1,0 +1,91 @@
+import { useState } from "react";
+import { Search } from "lucide-react";
+import { findOrderByReference } from "../lib/api";
+import type { BookingOrder } from "../lib/types";
+import { formatDate, formatMoney, formatTime } from "../lib/format";
+
+export default function ManageBooking() {
+  const [reference, setReference] = useState("");
+  const [email, setEmail] = useState("");
+  const [order, setOrder] = useState<BookingOrder | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setSearched(true);
+    const found = await findOrderByReference(reference.trim(), email.trim());
+    setOrder(found ?? null);
+    setLoading(false);
+  }
+
+  return (
+    <div className="mx-auto max-w-lg px-6 py-14">
+      <h1 className="mb-1 text-2xl font-bold text-ink-950">Manage your booking</h1>
+      <p className="mb-6 text-sm text-ink-900/70">Enter your booking reference and email to view it.</p>
+
+      <form onSubmit={handleSearch} className="flex flex-col gap-4 rounded-xl border border-ink-900/10 bg-white p-6">
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink-900/60">Booking reference</span>
+          <input
+            required
+            value={reference}
+            onChange={(e) => setReference(e.target.value.toUpperCase())}
+            placeholder="e.g. SYZNR5"
+            className="w-full rounded-lg border border-ink-900/15 px-3 py-2.5 uppercase tracking-widest focus:border-pine-500 focus:outline-none"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink-900/60">Email used to book</span>
+          <input
+            required
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-ink-900/15 px-3 py-2.5 focus:border-pine-500 focus:outline-none"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex items-center justify-center gap-2 rounded-lg bg-ink-950 px-6 py-2.5 font-bold text-white transition hover:bg-ink-800 disabled:opacity-60"
+        >
+          <Search className="h-4 w-4" />
+          {loading ? "Searching…" : "Find booking"}
+        </button>
+      </form>
+
+      {searched && !loading && !order && (
+        <p className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          No booking found for that reference and email.
+        </p>
+      )}
+
+      {order && (
+        <div className="mt-6 rounded-xl border border-ink-900/10 bg-white p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-xl font-extrabold tracking-widest text-ink-950">{order.bookingReference}</p>
+            <span className="rounded-full bg-pine-500/10 px-3 py-1 text-xs font-bold uppercase text-pine-700">Confirmed</span>
+          </div>
+
+          {order.slices.map((slice, i) => (
+            <p key={i} className="text-sm text-ink-900/70">
+              {slice.origin} &rarr; {slice.destination} &middot; {formatDate(slice.departingAt ?? "")} &middot;{" "}
+              {formatTime(slice.departingAt ?? "")}
+            </p>
+          ))}
+
+          <p className="mt-2 text-sm text-ink-900/70">
+            {order.passengers.map((p) => `${p.givenName} ${p.familyName}`).join(", ")}
+          </p>
+          <p className="mt-2 font-bold text-ink-950">{formatMoney(order.totalAmount, order.totalCurrency)}</p>
+
+          <p className="mt-4 text-xs text-ink-900/50">
+            Cancellation isn't available yet — contact support to change or cancel this trip.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

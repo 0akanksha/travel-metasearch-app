@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: farecompass
+    runtime: node
+    plan: free
+    # Explicit --include=dev on both installs: Render's implicit pre-build
+    # install step does not reliably install devDependencies (typescript,
+    # vite, @types/*) here, which breaks `tsc -b && vite build`. Don't rely
+    # on the platform's automatic `npm install` for this repo — this
+    # buildCommand is self-contained.
+    buildCommand: npm install --include=dev && npm run build && npm install --include=dev --prefix server && npm run build --prefix server
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # set manually — never commit connection strings
+      - key: JWT_SECRET
+        generateValue: true
+      # NODE_ENV intentionally omitted here as a platform env var — it's set
+      # to production only in the server's `start` script (server/package.json).
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DUFFEL_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
