@@ -3,10 +3,10 @@ import { cheapestFare, duffelFetch } from "../lib/duffel.js";
 import { mapWithConcurrency } from "../lib/concurrency.js";
 import { cacheGet, cacheSet } from "../lib/searchCache.js";
 import { EVERYWHERE_DESTINATIONS } from "../lib/destinations.js";
-import type { DuffelOffer, DuffelOfferRequest, DuffelOrder, DuffelPlace } from "../lib/duffelTypes.js";
+import { resolveRedirectUrl } from "../lib/airlineSites.js";
+import type { DuffelOffer, DuffelOfferRequest, DuffelPlace } from "../lib/duffelTypes.js";
 
 export const duffelRouter = Router();
-export const duffelAdminRouter = Router();
 
 const CACHE_TTL_MS = 15 * 60 * 1000;
 // Duffel test-mode rate limits well before this many requests would
@@ -49,6 +49,10 @@ export function simplifyOffer(offer: DuffelOffer) {
     expiresAt: offer.expires_at,
     owner: { name: offer.owner.name, iataCode: offer.owner.iata_code },
     passengerCount: offer.passengers.length,
+    // FareCompass doesn't process bookings — every offer carries a redirect
+    // target (the airline's real site, or a Google Flights search when the
+    // airline isn't in our curated map) so results can link straight out.
+    redirectUrl: resolveRedirectUrl(offer),
     slices: offer.slices.map((slice) => ({
       origin: slice.origin.iata_code,
       originName: slice.origin.name,
@@ -92,101 +96,15 @@ duffelRouter.post("/search", async (req, res) => {
   }
 });
 
+// Backs the interstitial redirect page (src/pages/Redirect.tsx) — the fare
+// summary and redirectUrl shown right before sending the user out to the
+// airline's own site.
 duffelRouter.get("/offers/:offerId", async (req, res) => {
   try {
     const offer = await duffelFetch<DuffelOffer>(`/air/offers/${req.params.offerId}`);
-    res.json({ offer: { ...simplifyOffer(offer), passengers: offer.passengers } });
+    res.json({ offer: simplifyOffer(offer) });
   } catch (err) {
     res.status(404).json({ error: err instanceof Error ? err.message : "Offer not found — it may have expired" });
-  }
-});
-
-function simplifyOrder(order: DuffelOrder) {
-  return {
-    id: order.id,
-    bookingReference: order.booking_reference,
-    totalAmount: order.total_amount,
-    totalCurrency: order.total_currency,
-    createdAt: order.created_at,
-    owner: { name: order.owner.name, iataCode: order.owner.iata_code },
-    slices: order.slices.map((slice) => ({
-      origin: slice.origin.iata_code,
-      originName: slice.origin.name,
-      destination: slice.destination.iata_code,
-      destinationName: slice.destination.name,
-      departingAt: slice.segments[0]?.departing_at ?? null,
-      arrivingAt: slice.segments[slice.segments.length - 1]?.arriving_at ?? null,
-      duration: slice.duration,
-      stops: Math.max(0, slice.segments.length - 1),
-    })),
-    passengers: order.passengers.map((p) => ({ id: p.id, givenName: p.given_name, familyName: p.family_name, email: p.email })),
-  };
-}
-
-duffelRouter.post("/orders", async (req, res) => {
-  const { offerId, passengers } = req.body as {
-    offerId?: string;
-    passengers?: { title: string; gender: string; givenName: string; familyName: string; bornOn: string; email: string; phoneNumber: string }[];
-  };
-  if (!offerId || !Array.isArray(passengers) || passengers.length === 0) {
-    return res.status(400).json({ error: "offerId and passengers are required" });
-  }
-
-  try {
-    // Fetch a fresh offer right before booking — Duffel offers expire quickly,
-    // and the passenger IDs to book against live here. The price is taken from
-    // this fresh fetch, never trusted from the client.
-    const offer = await duffelFetch<DuffelOffer>(`/air/offers/${offerId}`);
-    if (offer.passengers.length !== passengers.length) {
-      return res.status(400).json({ error: "Passenger count does not match this offer" });
-    }
-
-    const order = await duffelFetch<DuffelOrder>("/air/orders", {
-      method: "POST",
-      body: JSON.stringify({
-        data: {
-          selected_offers: [offerId],
-          // Test-mode only: Duffel test accounts have a simulated balance,
-          // so this completes instantly with no real payment step.
-          payments: [{ type: "balance", currency: offer.total_currency, amount: offer.total_amount }],
-          passengers: offer.passengers.map((offerPassenger, i) => ({
-            id: offerPassenger.id,
-            title: passengers[i].title,
-            gender: passengers[i].gender,
-            given_name: passengers[i].givenName,
-            family_name: passengers[i].familyName,
-            born_on: passengers[i].bornOn,
-            email: passengers[i].email,
-            phone_number: passengers[i].phoneNumber,
-          })),
-        },
-      }),
-    });
-
-    res.status(201).json({ order: simplifyOrder(order) });
-  } catch (err) {
-    res.status(502).json({ error: err instanceof Error ? err.message : "Booking failed" });
-  }
-});
-
-// Manage-booking lookup: keyed by the human-readable booking reference (the
-// code passengers actually have), scoped by email so one passenger can't look
-// up another's order by guessing a reference.
-duffelRouter.get("/orders/by-reference", async (req, res) => {
-  const { reference, email } = req.query;
-  if (typeof reference !== "string" || typeof email !== "string") {
-    return res.status(400).json({ error: "reference and email are required" });
-  }
-
-  try {
-    const orders = await duffelFetch<DuffelOrder[]>(
-      `/air/orders?booking_reference=${encodeURIComponent(reference.toUpperCase())}`,
-    );
-    const order = orders.find((o) => o.passengers.some((p) => p.email?.toLowerCase() === email.toLowerCase()));
-    if (!order) return res.status(404).json({ error: "Booking not found" });
-    res.json({ order: simplifyOrder(order) });
-  } catch {
-    res.status(404).json({ error: "Booking not found" });
   }
 });
 
@@ -269,16 +187,5 @@ duffelRouter.get("/everywhere", async (req, res) => {
     res.json(payload);
   } catch (err) {
     res.status(502).json({ error: err instanceof Error ? err.message : "Everywhere search failed" });
-  }
-});
-
-// Admin-only: every order on the Duffel test account, not scoped to one
-// passenger's email (mounted behind requireAuth+requireAdmin in index.ts).
-duffelAdminRouter.get("/", async (_req, res) => {
-  try {
-    const orders = await duffelFetch<DuffelOrder[]>("/air/orders?limit=50");
-    res.json({ orders: orders.map(simplifyOrder) });
-  } catch (err) {
-    res.status(502).json({ error: err instanceof Error ? err.message : "Could not list orders" });
   }
 });

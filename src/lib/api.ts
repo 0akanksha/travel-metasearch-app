@@ -1,13 +1,4 @@
-import type {
-  BookingOrder,
-  CalendarDay,
-  DestinationDeal,
-  OfferDetail,
-  OfferSummary,
-  PassengerInput,
-  Place,
-  PriceAlert,
-} from "./types";
+import type { CalendarDay, DestinationDeal, OfferSummary, Place, PriceAlert } from "./types";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -55,36 +46,10 @@ export async function searchFlights(
   }
 }
 
-export async function getOffer(offerId: string): Promise<OfferDetail | undefined> {
+export async function getOffer(offerId: string): Promise<OfferSummary | undefined> {
   try {
-    const { offer } = await apiFetch<{ offer: OfferDetail }>(`/duffel/offers/${encodeURIComponent(offerId)}`);
+    const { offer } = await apiFetch<{ offer: OfferSummary }>(`/duffel/offers/${encodeURIComponent(offerId)}`);
     return offer;
-  } catch {
-    return undefined;
-  }
-}
-
-export async function createOrder(
-  offerId: string,
-  passengers: PassengerInput[],
-): Promise<{ ok: true; order: BookingOrder } | { ok: false; error: string }> {
-  try {
-    const { order } = await apiFetch<{ order: BookingOrder }>("/duffel/orders", {
-      method: "POST",
-      body: JSON.stringify({ offerId, passengers }),
-    });
-    return { ok: true, order };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Booking failed" };
-  }
-}
-
-export async function findOrderByReference(reference: string, email: string): Promise<BookingOrder | undefined> {
-  try {
-    const { order } = await apiFetch<{ order: BookingOrder }>(
-      `/duffel/orders/by-reference?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`,
-    );
-    return order;
   } catch {
     return undefined;
   }
@@ -168,11 +133,6 @@ export async function deleteAlert(id: string, token: string): Promise<boolean> {
 export async function adminListAlerts(): Promise<PriceAlert[]> {
   const { alerts } = await apiFetch<{ alerts: PriceAlert[] }>("/admin/alerts");
   return alerts;
-}
-
-export async function adminListOrders(): Promise<BookingOrder[]> {
-  const { orders } = await apiFetch<{ orders: BookingOrder[] }>("/admin/duffel-orders");
-  return orders;
 }
 
 export async function adminRecheckAlerts(): Promise<{ checked: number }> {

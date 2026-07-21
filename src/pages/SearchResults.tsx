@@ -216,10 +216,10 @@ export default function SearchResults() {
                   <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end sm:gap-1">
                     <p className="text-2xl font-extrabold text-ink-950">{formatMoney(offer.totalAmount, offer.totalCurrency)}</p>
                     <Link
-                      to={`/book/${offer.id}`}
+                      to={`/redirect/${offer.id}`}
                       className="shrink-0 rounded-lg bg-ink-950 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-ink-800"
                     >
-                      Select
+                      View deal &rarr;
                     </Link>
                   </div>
                 </div>

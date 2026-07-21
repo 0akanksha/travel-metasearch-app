@@ -7,9 +7,7 @@ import Home from "./pages/Home";
 import SearchResults from "./pages/SearchResults";
 import PriceCalendar from "./pages/PriceCalendar";
 import Everywhere from "./pages/Everywhere";
-import BookingPage from "./pages/BookingPage";
-import BookingSuccess from "./pages/BookingSuccess";
-import ManageBooking from "./pages/ManageBooking";
+import Redirect from "./pages/Redirect";
 import Alerts from "./pages/Alerts";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -26,9 +24,7 @@ export default function App() {
               <Route path="/search" element={<SearchResults />} />
               <Route path="/calendar" element={<PriceCalendar />} />
               <Route path="/everywhere" element={<Everywhere />} />
-              <Route path="/book/:offerId" element={<BookingPage />} />
-              <Route path="/booking/success" element={<BookingSuccess />} />
-              <Route path="/manage" element={<ManageBooking />} />
+              <Route path="/redirect/:offerId" element={<Redirect />} />
               <Route path="/alerts" element={<Alerts />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<AdminRoute />}>

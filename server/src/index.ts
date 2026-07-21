@@ -7,7 +7,7 @@ import "express-async-errors";
 import path from "node:path";
 import express from "express";
 import cookieParser from "cookie-parser";
-import { duffelRouter, duffelAdminRouter } from "./routes/duffel.js";
+import { duffelRouter } from "./routes/duffel.js";
 import { alertsRouter, alertsAdminRouter } from "./routes/alerts.js";
 import { authRouter } from "./routes/auth.js";
 import { requireAdmin, requireAuth } from "./middleware/auth.js";
@@ -26,7 +26,6 @@ app.use("/api/auth", authRouter);
 app.use("/api/duffel", duffelRouter);
 app.use("/api/alerts", alertsRouter);
 app.use("/api/admin/alerts", requireAuth, requireAdmin, alertsAdminRouter);
-app.use("/api/admin/duffel-orders", requireAuth, requireAdmin, duffelAdminRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

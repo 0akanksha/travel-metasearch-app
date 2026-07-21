@@ -21,9 +21,6 @@ export default function Navbar() {
           <NavLink to="/alerts" className={({ isActive }) => (isActive ? "text-white" : "hover:text-white")}>
             Price alerts
           </NavLink>
-          <NavLink to="/manage" className={({ isActive }) => (isActive ? "text-white" : "hover:text-white")}>
-            Manage booking
-          </NavLink>
           <NavLink to="/admin" className={({ isActive }) => (isActive ? "text-white" : "hover:text-white")}>
             Admin
           </NavLink>

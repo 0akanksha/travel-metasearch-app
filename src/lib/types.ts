@@ -28,11 +28,11 @@ export interface OfferSummary {
   expiresAt: string;
   owner: { name: string | null; iataCode: string | null };
   passengerCount: number;
+  // Where "View deal" sends you — the airline's real site, or a Google
+  // Flights search when the airline isn't in the curated map. FareCompass
+  // never processes a booking itself.
+  redirectUrl: string;
   slices: OfferSlice[];
-}
-
-export interface OfferDetail extends OfferSummary {
-  passengers: { id: string; type: string }[];
 }
 
 export interface CalendarDay {
@@ -63,25 +63,4 @@ export interface PriceAlert {
   lastCheckedAt: string | null;
   createdAt: string;
   unsubscribeToken: string;
-}
-
-export interface PassengerInput {
-  title: string;
-  gender: "m" | "f";
-  givenName: string;
-  familyName: string;
-  bornOn: string;
-  email: string;
-  phoneNumber: string;
-}
-
-export interface BookingOrder {
-  id: string;
-  bookingReference: string;
-  totalAmount: string;
-  totalCurrency: string;
-  createdAt: string;
-  owner: { name: string | null; iataCode: string | null };
-  slices: OfferSlice[];
-  passengers: { id: string; givenName: string; familyName: string; email: string | null }[];
 }
