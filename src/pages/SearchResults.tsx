@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Bell, Globe2, SearchX } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, Globe2, SearchX } from "lucide-react";
 import { searchFlights } from "../lib/api";
 import type { OfferSummary } from "../lib/types";
 import { formatIsoDuration, formatMoney, formatTime } from "../lib/format";
@@ -9,6 +9,8 @@ import LoadingSpinner from "../components/LoadingSpinner";
 
 type SortKey = "price" | "duration" | "departure";
 type StopsFilter = "any" | "nonstop" | "1stop";
+
+const PAGE_SIZE = 20;
 
 function totalDurationMinutes(offer: OfferSummary): number {
   return offer.slices.reduce((sum, slice) => {
@@ -31,6 +33,7 @@ export default function SearchResults() {
   const [stopsFilter, setStopsFilter] = useState<StopsFilter>("any");
   const [airlineFilter, setAirlineFilter] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("price");
+  const [page, setPage] = useState(1);
 
   const origin = searchParams.get("origin") ?? "";
   const destination = searchParams.get("destination") ?? "";
@@ -73,6 +76,13 @@ export default function SearchResults() {
     }
     return sorted;
   }, [allOffers, stopsFilter, airlineFilter, sortKey]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [allOffers, stopsFilter, airlineFilter, sortKey]);
+
+  const totalPages = Math.max(1, Math.ceil(offers.length / PAGE_SIZE));
+  const pageOffers = useMemo(() => offers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [offers, page]);
 
   function toggleAirline(name: string) {
     setAirlineFilter((prev) => {
@@ -193,7 +203,7 @@ export default function SearchResults() {
             )}
 
             <div className="flex flex-col gap-3">
-              {offers.map((offer) => (
+              {pageOffers.map((offer) => (
                 <div
                   key={offer.id}
                   className="flex flex-col gap-4 rounded-xl border border-ink-900/10 bg-white p-5 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
@@ -225,6 +235,28 @@ export default function SearchResults() {
                 </div>
               ))}
             </div>
+
+            {totalPages > 1 && (
+              <div className="mt-2 flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="flex items-center gap-1 rounded-lg border border-ink-900/15 px-3 py-2 text-sm font-medium text-ink-900/70 transition hover:bg-ink-950/5 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Prev
+                </button>
+                <span className="text-sm text-ink-900/60">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="flex items-center gap-1 rounded-lg border border-ink-900/15 px-3 py-2 text-sm font-medium text-ink-900/70 transition hover:bg-ink-950/5 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
