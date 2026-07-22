@@ -23,7 +23,8 @@ async function hotelsProviderFetch<T>(path: string, params: Record<string, strin
   });
 
   if (!res.ok) {
-    throw new Error(`Hotels provider request failed (${res.status})`);
+    const body = await res.text().catch(() => "");
+    throw new Error(`Hotels provider request failed (${res.status}): ${body.slice(0, 300)}`);
   }
   return res.json() as Promise<T>;
 }
