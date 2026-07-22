@@ -1,16 +1,20 @@
-// Real geocoding + real driving routes, both from free, keyless public
-// services — no self-serve provider survived without either a sales gate
-// (Duffel Stays), a shutdown (Amadeus), or a billing pre-auth the user
-// wasn't comfortable with (Google Maps Platform). Nominatim and OSRM's
-// public demo server need no account at all.
+// Real geocoding + real driving routes for cabs.
 //
-// Nominatim's usage policy caps the public instance at ~1 request/second
-// and requires a real User-Agent (not a browser UA) — respected here by
-// relying on the caller's debounce (see AddressAutocomplete.tsx), not by
-// rate-limiting server-side. OSRM's demo server has no uptime guarantee
-// ("not for production") — acceptable for this app's scale; swapping in a
-// self-hosted/paid instance later only touches this one file.
+// Geocoding: public Nominatim (nominatim.openstreetmap.org) worked in dev
+// but returned 429 from Render's shared IP in production — its usage policy
+// throttles cloud-hosting traffic harder than residential. Swapped for the
+// "Forward & Reverse Geocoding" listing on RapidAPI (same account already
+// used for hotels, same underlying OpenStreetMap/Nominatim data, but hosted
+// so it isn't subject to the public instance's IP-based throttling) —
+// confirmed live with a real query before wiring this up, response shape is
+// identical to public Nominatim's (display_name/lat/lon).
+//
+// Routing: OSRM's public demo server (router.project-osrm.org) had no such
+// problem on Render, so it's untouched. It has no uptime guarantee ("not
+// for production") — acceptable for this app's scale; swapping in a
+// self-hosted/paid instance later only touches this one function.
 
+const GEOCODING_HOST = "forward-reverse-geocoding.p.rapidapi.com";
 const USER_AGENT = "FareCompass/1.0 (personal project; hotel/cab search demo)";
 
 interface NominatimResult {
@@ -26,15 +30,20 @@ export interface GeoPlace {
 }
 
 export async function geocodeAddress(query: string): Promise<GeoPlace[]> {
-  const url = new URL("https://nominatim.openstreetmap.org/search");
+  const url = new URL(`https://${GEOCODING_HOST}/v1/search`);
   url.searchParams.set("q", query);
-  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("format", "json");
   url.searchParams.set("limit", "6");
-  // Without this, Nominatim falls back to each place's local-language name
-  // (e.g. Arabic script for Middle Eastern addresses) instead of English.
+  // Without this, results come back in each place's local-language name
+  // (e.g. Arabic for Middle Eastern addresses) instead of English.
   url.searchParams.set("accept-language", "en");
 
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+  const res = await fetch(url, {
+    headers: {
+      "x-rapidapi-host": GEOCODING_HOST,
+      "x-rapidapi-key": process.env.RAPIDAPI_KEY ?? "",
+    },
+  });
   if (!res.ok) throw new Error(`Geocoding failed (${res.status})`);
 
   const results = (await res.json()) as NominatimResult[];
