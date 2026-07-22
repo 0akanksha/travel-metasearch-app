@@ -11,6 +11,7 @@ import { duffelRouter } from "./routes/duffel.js";
 import { alertsRouter, alertsAdminRouter } from "./routes/alerts.js";
 import { staysRouter, staysAdminRouter } from "./routes/stays.js";
 import { cabsRouter, cabsAdminRouter } from "./routes/cabs.js";
+import { tripsRouter } from "./routes/trips.js";
 import { chatRouter } from "./routes/chat.js";
 import { authRouter } from "./routes/auth.js";
 import { requireAdmin, requireAuth } from "./middleware/auth.js";
@@ -33,6 +34,7 @@ app.use("/api/stays", staysRouter);
 app.use("/api/admin/stays", requireAuth, requireAdmin, staysAdminRouter);
 app.use("/api/cabs", cabsRouter);
 app.use("/api/admin/cabs", requireAuth, requireAdmin, cabsAdminRouter);
+app.use("/api/trips", tripsRouter);
 app.use("/api/chat", chatRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

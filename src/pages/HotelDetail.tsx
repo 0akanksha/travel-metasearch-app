@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Star } from "lucide-react";
-import { bookHotel, getHotel } from "../lib/api";
-import type { HotelDetail as HotelDetailType } from "../lib/types";
+import { bookHotel, createTrip, getHotel } from "../lib/api";
+import type { HotelDetail as HotelDetailType, TripSelection } from "../lib/types";
 import { formatMoney, formatShortDate } from "../lib/format";
 import LoadingSpinner from "../components/LoadingSpinner";
+import TripPicker from "../components/TripPicker";
 
 export default function HotelDetail() {
   const { hotelId } = useParams();
@@ -16,6 +17,7 @@ export default function HotelDetail() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [tripSelection, setTripSelection] = useState<TripSelection>({ mode: "none" });
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState("");
 
@@ -46,6 +48,20 @@ export default function HotelDetail() {
     if (!hotel || !hotel.price) return;
     setError("");
     setBooking(true);
+
+    let tripId: string | undefined;
+    if (tripSelection.mode === "existing") {
+      tripId = tripSelection.tripId;
+    } else if (tripSelection.mode === "new") {
+      const tripResult = await createTrip(email, tripSelection.label);
+      if (!tripResult.ok) {
+        setBooking(false);
+        setError(tripResult.error);
+        return;
+      }
+      tripId = tripResult.trip.id;
+    }
+
     const result = await bookHotel({
       hotelId: hotel.id,
       hotelName: hotel.name,
@@ -56,6 +72,7 @@ export default function HotelDetail() {
       checkOutDate: hotel.checkOutDate,
       guests: hotel.guests,
       guest: { name, email },
+      tripId,
     });
     setBooking(false);
     if (!result.ok) {
@@ -132,6 +149,7 @@ export default function HotelDetail() {
               />
             </label>
           </div>
+          <TripPicker email={email} onChange={setTripSelection} />
           <button
             type="submit"
             disabled={booking || !hotel.price}

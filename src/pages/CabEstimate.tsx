@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Car, Clock, Route } from "lucide-react";
-import { bookCab, estimateCab } from "../lib/api";
-import type { CabEstimate as CabEstimateType, CabFareOption, GeoPlace } from "../lib/types";
+import { bookCab, createTrip, estimateCab } from "../lib/api";
+import type { CabEstimate as CabEstimateType, CabFareOption, GeoPlace, TripSelection } from "../lib/types";
 import { formatMoney } from "../lib/format";
 import LoadingSpinner from "../components/LoadingSpinner";
+import TripPicker from "../components/TripPicker";
 
 export default function CabEstimate() {
   const [searchParams] = useSearchParams();
@@ -29,6 +30,7 @@ export default function CabEstimate() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [tripSelection, setTripSelection] = useState<TripSelection>({ mode: "none" });
   const [booking, setBooking] = useState(false);
   const [bookError, setBookError] = useState("");
 
@@ -54,6 +56,20 @@ export default function CabEstimate() {
     if (!estimate || !selected) return;
     setBookError("");
     setBooking(true);
+
+    let tripId: string | undefined;
+    if (tripSelection.mode === "existing") {
+      tripId = tripSelection.tripId;
+    } else if (tripSelection.mode === "new") {
+      const tripResult = await createTrip(email, tripSelection.label);
+      if (!tripResult.ok) {
+        setBooking(false);
+        setBookError(tripResult.error);
+        return;
+      }
+      tripId = tripResult.trip.id;
+    }
+
     const result = await bookCab({
       pickup,
       dropoff,
@@ -63,6 +79,7 @@ export default function CabEstimate() {
       fare: selected.fare,
       pickupTime,
       guest: { name, email, phone },
+      tripId,
     });
     setBooking(false);
     if (!result.ok) {
@@ -162,6 +179,9 @@ export default function CabEstimate() {
               className="w-full rounded-lg border border-ink-900/15 px-3 py-2.5 focus:border-pine-500 focus:outline-none"
             />
           </label>
+        </div>
+        <div className="mt-4">
+          <TripPicker email={email} onChange={setTripSelection} />
         </div>
         <button
           type="submit"

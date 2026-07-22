@@ -24,6 +24,9 @@ export default function Navbar() {
           <NavLink to="/cabs" className={({ isActive }) => (isActive ? "text-white" : "hover:text-white")}>
             Cabs
           </NavLink>
+          <NavLink to="/trip" className={({ isActive }) => (isActive ? "text-white" : "hover:text-white")}>
+            My Trip
+          </NavLink>
           <NavLink to="/alerts" className={({ isActive }) => (isActive ? "text-white" : "hover:text-white")}>
             Price alerts
           </NavLink>

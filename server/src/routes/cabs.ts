@@ -5,6 +5,7 @@ import { db } from "../db/client.js";
 import { cabBookings } from "../db/schema.js";
 import { CAB_TYPES, estimateFare } from "../lib/cabRates.js";
 import { computeRoute, geocodeAddress } from "../lib/routing.js";
+import { verifyTripOwnership } from "./trips.js";
 
 export const cabsRouter = Router();
 export const cabsAdminRouter = Router();
@@ -12,6 +13,7 @@ export const cabsAdminRouter = Router();
 function serializeBooking(booking: typeof cabBookings.$inferSelect) {
   return {
     id: booking.id,
+    tripId: booking.tripId,
     pickupLabel: booking.pickupLabel,
     dropoffLabel: booking.dropoffLabel,
     distanceKm: Number(booking.distanceKm),
@@ -65,7 +67,7 @@ cabsRouter.post("/estimate", async (req, res) => {
 });
 
 cabsRouter.post("/book", async (req, res) => {
-  const { pickup, dropoff, distanceKm, durationMin, cabType, fare, pickupTime, guest } = req.body as {
+  const { pickup, dropoff, distanceKm, durationMin, cabType, fare, pickupTime, guest, tripId } = req.body as {
     pickup?: { lat: number; lng: number; label: string };
     dropoff?: { lat: number; lng: number; label: string };
     distanceKm?: number;
@@ -74,15 +76,24 @@ cabsRouter.post("/book", async (req, res) => {
     fare?: number;
     pickupTime?: string;
     guest?: { name?: string; email?: string; phone?: string };
+    tripId?: string;
   };
   const cabTypeDef = CAB_TYPES.find((c) => c.id === cabType);
   if (!pickup || !dropoff || !cabTypeDef || !fare || !pickupTime || !guest?.name || !guest?.email || !guest?.phone) {
     return res.status(400).json({ error: "pickup, dropoff, cabType, fare, pickupTime, and guest info are required" });
   }
 
+  // Attaching to a trip is optional (TripPicker.tsx) — but if a tripId was
+  // given, it must actually belong to this same guest email, same "email is
+  // the credential" trust model as the rest of this app.
+  if (tripId && !(await verifyTripOwnership(tripId, guest.email))) {
+    return res.status(404).json({ error: "Trip not found" });
+  }
+
   const [booking] = await db
     .insert(cabBookings)
     .values({
+      tripId: tripId ?? null,
       pickupLabel: pickup.label,
       pickupLat: String(pickup.lat),
       pickupLng: String(pickup.lng),

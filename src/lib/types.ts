@@ -84,6 +84,7 @@ export interface HotelDetail extends HotelSummary {
 
 export interface HotelBooking {
   id: string;
+  tripId: string | null;
   providerHotelId: string;
   bookingReference: string;
   hotelName: string;
@@ -123,6 +124,7 @@ export interface CabEstimate {
 
 export interface CabBooking {
   id: string;
+  tripId: string | null;
   pickupLabel: string;
   dropoffLabel: string;
   distanceKm: number;
@@ -138,6 +140,49 @@ export interface CabBooking {
   cancelToken: string;
   createdAt: string;
 }
+
+// --- Trips (server/src/routes/trips.ts) ---
+// Bundles a flight snapshot + hotel/cab bookings under one guest-owned
+// grouping. Flights have no local booking (FareCompass is metasearch-only
+// for flights), so tripFlights is a saved-offer snapshot, not a booking.
+
+export interface TripSummary {
+  id: string;
+  email: string;
+  label: string;
+  createdAt: string;
+  flightCount: number;
+  hotelCount: number;
+  cabCount: number;
+}
+
+export interface TripFlight {
+  id: string;
+  origin: string;
+  originLabel: string;
+  destination: string;
+  destinationLabel: string;
+  departureDate: string;
+  returnDate: string | null;
+  ownerName: string | null;
+  totalAmount: number;
+  totalCurrency: string;
+  redirectUrl: string;
+  offerExpiresAt: string | null;
+  createdAt: string;
+}
+
+export interface TripDetail {
+  trip: { id: string; email: string; label: string; createdAt: string };
+  flights: TripFlight[];
+  hotels: HotelBooking[];
+  cabs: CabBooking[];
+}
+
+// What TripPicker.tsx reports back to the page hosting it — the page
+// creates the trip (if "new") right before its own booking/save call, so an
+// opened-then-abandoned picker never creates an orphan trip.
+export type TripSelection = { mode: "none" } | { mode: "existing"; tripId: string } | { mode: "new"; label: string };
 
 export interface PriceAlert {
   id: string;

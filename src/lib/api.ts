@@ -11,6 +11,9 @@ import type {
   OfferSummary,
   Place,
   PriceAlert,
+  TripDetail,
+  TripFlight,
+  TripSummary,
 } from "./types";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -195,6 +198,7 @@ export interface BookHotelInput {
   checkOutDate: string;
   guests: number;
   guest: { name: string; email: string };
+  tripId?: string;
 }
 
 export async function bookHotel(
@@ -265,6 +269,7 @@ export interface BookCabInput {
   fare: number;
   pickupTime: string;
   guest: { name: string; email: string; phone: string };
+  tripId?: string;
 }
 
 export async function bookCab(
@@ -296,6 +301,70 @@ export async function cancelCabBooking(id: string, token: string): Promise<boole
     return true;
   } catch {
     return false;
+  }
+}
+
+// --- Trips ---
+
+export async function listTrips(email: string): Promise<TripSummary[]> {
+  try {
+    const { trips } = await apiFetch<{ trips: TripSummary[] }>(`/trips?email=${encodeURIComponent(email)}`);
+    return trips;
+  } catch {
+    return [];
+  }
+}
+
+export async function createTrip(
+  email: string,
+  label?: string,
+): Promise<{ ok: true; trip: TripSummary } | { ok: false; error: string }> {
+  try {
+    const { trip } = await apiFetch<{ trip: TripSummary }>("/trips", {
+      method: "POST",
+      body: JSON.stringify({ email, label }),
+    });
+    return { ok: true, trip };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not start a trip" };
+  }
+}
+
+export async function getTrip(tripId: string, email: string): Promise<TripDetail | undefined> {
+  try {
+    return await apiFetch<TripDetail>(`/trips/${encodeURIComponent(tripId)}?email=${encodeURIComponent(email)}`);
+  } catch {
+    return undefined;
+  }
+}
+
+export interface SaveFlightToTripInput {
+  email: string;
+  origin: string;
+  originLabel: string;
+  destination: string;
+  destinationLabel: string;
+  departureDate: string;
+  returnDate?: string;
+  ownerName?: string;
+  totalAmount: number;
+  totalCurrency: string;
+  redirectUrl: string;
+  offerExpiresAt?: string;
+}
+
+export async function saveFlightToTrip(
+  tripId: string,
+  input: SaveFlightToTripInput,
+): Promise<{ ok: true; flight: TripFlight } | { ok: false; error: string }> {
+  try {
+    const { flight } = await apiFetch<{ flight: TripFlight }>(`/trips/${encodeURIComponent(tripId)}/flights`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return { ok: true, flight };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not save flight to trip" };
   }
 }
 

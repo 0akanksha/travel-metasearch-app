@@ -6,6 +6,7 @@ import { hotelBookings } from "../db/schema.js";
 import { cacheGet, cacheSet } from "../lib/searchCache.js";
 import { cheapestPrice, searchHotels, searchRegions } from "../lib/hotelsProvider.js";
 import type { HotelsProviderProperty } from "../lib/hotelsProviderTypes.js";
+import { verifyTripOwnership } from "./trips.js";
 
 export const staysRouter = Router();
 export const staysAdminRouter = Router();
@@ -28,6 +29,7 @@ function simplifyProperty(property: HotelsProviderProperty) {
 function serializeBooking(booking: typeof hotelBookings.$inferSelect) {
   return {
     id: booking.id,
+    tripId: booking.tripId,
     providerHotelId: booking.providerHotelId,
     bookingReference: booking.bookingReference,
     hotelName: booking.hotelName,
@@ -126,7 +128,7 @@ staysRouter.get("/hotel/:hotelId", async (req, res) => {
 });
 
 staysRouter.post("/book", async (req, res) => {
-  const { hotelId, hotelName, cityLabel, price, currency, checkInDate, checkOutDate, guests, guest } = req.body as {
+  const { hotelId, hotelName, cityLabel, price, currency, checkInDate, checkOutDate, guests, guest, tripId } = req.body as {
     hotelId?: string;
     hotelName?: string;
     cityLabel?: string;
@@ -136,14 +138,23 @@ staysRouter.post("/book", async (req, res) => {
     checkOutDate?: string;
     guests?: number;
     guest?: { name?: string; email?: string };
+    tripId?: string;
   };
   if (!hotelId || !hotelName || !checkInDate || !checkOutDate || !price || !currency || !guest?.name || !guest?.email) {
     return res.status(400).json({ error: "hotelId, hotelName, dates, price, and guest name/email are required" });
   }
 
+  // Attaching to a trip is optional (TripPicker.tsx) — but if a tripId was
+  // given, it must actually belong to this same guest email, same "email is
+  // the credential" trust model as the rest of this app.
+  if (tripId && !(await verifyTripOwnership(tripId, guest.email))) {
+    return res.status(404).json({ error: "Trip not found" });
+  }
+
   const [booking] = await db
     .insert(hotelBookings)
     .values({
+      tripId: tripId ?? null,
       providerHotelId: hotelId,
       bookingReference: crypto.randomUUID().slice(0, 8).toUpperCase(),
       hotelName,
