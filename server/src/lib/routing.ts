@@ -30,6 +30,9 @@ export async function geocodeAddress(query: string): Promise<GeoPlace[]> {
   url.searchParams.set("q", query);
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("limit", "6");
+  // Without this, Nominatim falls back to each place's local-language name
+  // (e.g. Arabic script for Middle Eastern addresses) instead of English.
+  url.searchParams.set("accept-language", "en");
 
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Geocoding failed (${res.status})`);
