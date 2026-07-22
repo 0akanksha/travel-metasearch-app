@@ -14,9 +14,14 @@ const NAV_LINKS: { to: string; label: string; end?: boolean }[] = [
 ];
 
 export default function Navbar() {
-  // Eight links no longer fit in a single row below ~1024px (they overlapped
-  // and forced the whole page to scroll horizontally on phones) — collapses
-  // into a hamburger-triggered stacked menu under the `md` breakpoint instead.
+  // Eight links no longer fit in a single row below ~1024px — collapses into
+  // a hamburger-triggered stacked menu under the `lg` breakpoint instead.
+  // Deliberately `lg`, not `md`: at exactly 768px (standard iPad portrait —
+  // a very common real device, not an edge case) the `md` row fit but was
+  // visibly cramped, with the logo touching "Search" and two-word items
+  // ("My Trip", "Price alerts") wrapping onto a second line. Confirmed via
+  // a real 768px-viewport browser pass that `lg` clears that up; landscape
+  // tablets (1024px+) already had comfortable room either way.
   const [open, setOpen] = useState(false);
 
   return (
@@ -29,7 +34,7 @@ export default function Navbar() {
           <span className="text-lg font-bold tracking-tight">FareCompass</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 md:flex">
+        <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 lg:flex">
           {NAV_LINKS.map((link) => (
             <NavLink
               key={link.to}
@@ -46,14 +51,14 @@ export default function Navbar() {
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Close menu" : "Open menu"}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-white/80 hover:text-white md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-white/80 hover:text-white lg:hidden"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {open && (
-        <nav className="flex flex-col gap-1 border-t border-white/10 px-6 py-4 text-sm font-medium text-white/80 md:hidden">
+        <nav className="flex flex-col gap-1 border-t border-white/10 px-6 py-4 text-sm font-medium text-white/80 lg:hidden">
           {NAV_LINKS.map((link) => (
             <NavLink
               key={link.to}
