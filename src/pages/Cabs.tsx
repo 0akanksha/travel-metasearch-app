@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { Car, MapPinned, ShieldCheck, Timer } from "lucide-react";
 import CabSearchForm from "../components/CabSearchForm";
 
@@ -9,6 +10,11 @@ const PERKS = [
 ];
 
 export default function Cabs() {
+  const [searchParams] = useSearchParams();
+  // Carried through from a trip's "Search cabs for this trip" CTA (see
+  // TripDetail.tsx).
+  const email = searchParams.get("email") ?? undefined;
+
   return (
     <div>
       <section className="relative overflow-hidden bg-gradient-to-br from-ink-950 via-ink-900 to-pine-700 pb-28 pt-16 text-white sm:pt-24">
@@ -26,7 +32,7 @@ export default function Cabs() {
           </p>
         </div>
         <div className="relative mx-auto mt-10 max-w-4xl px-4 sm:px-6">
-          <CabSearchForm />
+          <CabSearchForm email={email} />
         </div>
       </section>
 

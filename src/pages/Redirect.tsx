@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ExternalLink, Info, Plus } from "lucide-react";
 import { createTrip, getOffer, saveFlightToTrip } from "../lib/api";
 import type { OfferSummary, TripSelection } from "../lib/types";
@@ -10,11 +10,15 @@ import TripPicker from "../components/TripPicker";
 export default function Redirect() {
   const { offerId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Pre-filled/auto-opened when arriving from a trip's "Search flights for
+  // this trip" CTA (see TripDetail.tsx / SearchForm.tsx / SearchResults.tsx).
+  const prefilledEmail = searchParams.get("email") ?? "";
   const [offer, setOffer] = useState<OfferSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [savingOpen, setSavingOpen] = useState(false);
-  const [saveEmail, setSaveEmail] = useState("");
+  const [savingOpen, setSavingOpen] = useState(Boolean(prefilledEmail));
+  const [saveEmail, setSaveEmail] = useState(prefilledEmail);
   const [tripSelection, setTripSelection] = useState<TripSelection>({ mode: "none" });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -38,7 +42,7 @@ export default function Redirect() {
     if (tripSelection.mode === "existing") {
       tripId = tripSelection.tripId;
     } else if (tripSelection.mode === "new") {
-      const tripResult = await createTrip(saveEmail, tripSelection.label);
+      const tripResult = await createTrip({ email: saveEmail, label: tripSelection.label });
       if (!tripResult.ok) {
         setSaving(false);
         setSaveError(tripResult.error);

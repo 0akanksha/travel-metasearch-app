@@ -16,7 +16,10 @@ export default function HotelDetail() {
   const [hotel, setHotel] = useState<HotelDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  // Pre-filled when arriving from a trip's "Search hotels for this trip"
+  // CTA (see TripDetail.tsx / HotelResults.tsx) so the traveler doesn't
+  // retype it before picking that same trip in TripPicker below.
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [tripSelection, setTripSelection] = useState<TripSelection>({ mode: "none" });
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState("");
@@ -53,7 +56,7 @@ export default function HotelDetail() {
     if (tripSelection.mode === "existing") {
       tripId = tripSelection.tripId;
     } else if (tripSelection.mode === "new") {
-      const tripResult = await createTrip(email, tripSelection.label);
+      const tripResult = await createTrip({ email, label: tripSelection.label });
       if (!tripResult.ok) {
         setBooking(false);
         setError(tripResult.error);

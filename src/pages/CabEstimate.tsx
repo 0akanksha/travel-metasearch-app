@@ -28,7 +28,9 @@ export default function CabEstimate() {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<CabFareOption | null>(null);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  // Pre-filled when arriving from a trip's "Search cabs for this trip" CTA
+  // (see TripDetail.tsx / Cabs.tsx / CabSearchForm.tsx).
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [phone, setPhone] = useState("");
   const [tripSelection, setTripSelection] = useState<TripSelection>({ mode: "none" });
   const [booking, setBooking] = useState(false);
@@ -61,7 +63,7 @@ export default function CabEstimate() {
     if (tripSelection.mode === "existing") {
       tripId = tripSelection.tripId;
     } else if (tripSelection.mode === "new") {
-      const tripResult = await createTrip(email, tripSelection.label);
+      const tripResult = await createTrip({ email, label: tripSelection.label });
       if (!tripResult.ok) {
         setBooking(false);
         setBookError(tripResult.error);

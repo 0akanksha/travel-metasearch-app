@@ -40,6 +40,10 @@ export default function SearchResults() {
   const date = searchParams.get("date") ?? "";
   const returnDate = searchParams.get("returnDate") ?? undefined;
   const passengers = Number(searchParams.get("passengers") ?? 1);
+  // Carried through from a trip's "Search flights for this trip" CTA (see
+  // TripDetail.tsx / SearchForm.tsx) so the redirect page's "save to trip"
+  // section arrives pre-filled.
+  const email = searchParams.get("email") ?? "";
 
   useEffect(() => {
     setLoading(true);
@@ -109,6 +113,7 @@ export default function SearchResults() {
             returnDate,
             passengers,
             tripType: returnDate ? "roundtrip" : "oneway",
+            email,
           }}
         />
       </div>
@@ -226,7 +231,7 @@ export default function SearchResults() {
                   <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end sm:gap-1">
                     <p className="text-2xl font-extrabold text-ink-950">{formatMoney(offer.totalAmount, offer.totalCurrency)}</p>
                     <Link
-                      to={`/redirect/${offer.id}`}
+                      to={`/redirect/${offer.id}${email ? `?email=${encodeURIComponent(email)}` : ""}`}
                       className="shrink-0 rounded-lg bg-ink-950 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-ink-800"
                     >
                       View deal &rarr;

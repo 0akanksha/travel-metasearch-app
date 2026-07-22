@@ -42,6 +42,16 @@ export const trips = pgTable("trips", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull(),
   label: text("label").notNull().default("My trip"),
+  // Set when a trip is planned up front (MyTrip.tsx's "Plan a trip" form) so
+  // TripDetail.tsx's search CTAs have something to prefill —
+  // destinationRegionId reuses the same RapidAPI gaiaId HotelSearchForm
+  // already resolves via DestinationAutocomplete, so a hotel-search CTA
+  // needs no extra resolution step. All null for trips that still arise
+  // organically from booking first (the original flow), which still works.
+  destinationLabel: text("destination_label"),
+  destinationRegionId: text("destination_region_id"),
+  startDate: text("start_date"), // YYYY-MM-DD
+  endDate: text("end_date"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

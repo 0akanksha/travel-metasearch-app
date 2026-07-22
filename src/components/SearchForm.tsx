@@ -18,6 +18,10 @@ export interface SearchFormInitial {
   returnDate?: string;
   passengers?: number;
   tripType?: TripType;
+  // Carried through from a trip's "Search flights for this trip" CTA (see
+  // TripDetail.tsx) so the redirect page's "save to trip" section arrives
+  // pre-filled — not a search parameter itself, just threaded along.
+  email?: string;
 }
 
 export default function SearchForm({ initial }: { initial?: SearchFormInitial }) {
@@ -63,6 +67,7 @@ export default function SearchForm({ initial }: { initial?: SearchFormInitial })
     }
     const params = new URLSearchParams({ origin, destination, date, passengers: String(passengers) });
     if (tripType === "roundtrip") params.set("returnDate", returnDate);
+    if (initial?.email) params.set("email", initial.email);
     navigate(`/search?${params.toString()}`);
   }
 

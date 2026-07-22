@@ -146,11 +146,20 @@ export interface CabBooking {
 // grouping. Flights have no local booking (FareCompass is metasearch-only
 // for flights), so tripFlights is a saved-offer snapshot, not a booking.
 
-export interface TripSummary {
+export interface Trip {
   id: string;
   email: string;
   label: string;
+  // Set when a trip is planned up front (MyTrip.tsx's "Plan a trip" form),
+  // null for trips that still arise organically from booking first.
+  destinationLabel: string | null;
+  destinationRegionId: string | null;
+  startDate: string | null;
+  endDate: string | null;
   createdAt: string;
+}
+
+export interface TripSummary extends Trip {
   flightCount: number;
   hotelCount: number;
   cabCount: number;
@@ -173,7 +182,7 @@ export interface TripFlight {
 }
 
 export interface TripDetail {
-  trip: { id: string; email: string; label: string; createdAt: string };
+  trip: Trip;
   flights: TripFlight[];
   hotels: HotelBooking[];
   cabs: CabBooking[];

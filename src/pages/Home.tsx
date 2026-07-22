@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { Bell, CalendarRange, Compass, Globe2 } from "lucide-react";
 import SearchForm from "../components/SearchForm";
 
@@ -9,6 +10,15 @@ const PERKS = [
 ];
 
 export default function Home() {
+  const [searchParams] = useSearchParams();
+  // Carried through from a trip's "Search flights for this trip" CTA (see
+  // TripDetail.tsx) — soft-prefill only, since flights use Duffel IATA
+  // codes, a different namespace than a trip's saved destinationRegionId.
+  const destinationLabel = searchParams.get("destinationLabel") ?? undefined;
+  const date = searchParams.get("date") ?? undefined;
+  const returnDate = searchParams.get("returnDate") ?? undefined;
+  const email = searchParams.get("email") ?? undefined;
+
   return (
     <div>
       <section className="relative overflow-hidden bg-gradient-to-br from-ink-950 via-ink-900 to-pine-700 pb-28 pt-16 text-white sm:pt-24">
@@ -26,7 +36,7 @@ export default function Home() {
           </p>
         </div>
         <div className="relative mx-auto mt-10 max-w-5xl px-4 sm:px-6">
-          <SearchForm />
+          <SearchForm initial={{ destinationLabel, date, returnDate, email }} />
         </div>
       </section>
 

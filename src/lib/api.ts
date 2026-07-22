@@ -315,14 +315,22 @@ export async function listTrips(email: string): Promise<TripSummary[]> {
   }
 }
 
+export interface CreateTripInput {
+  email: string;
+  label?: string;
+  destinationLabel?: string;
+  destinationRegionId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 export async function createTrip(
-  email: string,
-  label?: string,
+  input: CreateTripInput,
 ): Promise<{ ok: true; trip: TripSummary } | { ok: false; error: string }> {
   try {
     const { trip } = await apiFetch<{ trip: TripSummary }>("/trips", {
       method: "POST",
-      body: JSON.stringify({ email, label }),
+      body: JSON.stringify(input),
     });
     return { ok: true, trip };
   } catch (err) {

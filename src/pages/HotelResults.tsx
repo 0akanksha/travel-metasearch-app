@@ -19,6 +19,9 @@ export default function HotelResults() {
   const checkInDate = searchParams.get("checkInDate") ?? "";
   const checkOutDate = searchParams.get("checkOutDate") ?? "";
   const guests = Number(searchParams.get("guests") ?? 2);
+  // Carried through from a trip's "Search hotels for this trip" CTA so the
+  // guest-info form on the next page arrives pre-filled — see TripDetail.tsx.
+  const email = searchParams.get("email") ?? "";
 
   useEffect(() => {
     setLoading(true);
@@ -71,7 +74,7 @@ export default function HotelResults() {
         {hotels.map((hotel) => (
           <Link
             key={hotel.id}
-            to={`/hotels/${hotel.id}?searchId=${encodeURIComponent(searchId)}`}
+            to={`/hotels/${hotel.id}?searchId=${encodeURIComponent(searchId)}${email ? `&email=${encodeURIComponent(email)}` : ""}`}
             className="flex flex-col overflow-hidden rounded-xl border border-ink-900/10 bg-white shadow-sm transition hover:shadow-md"
           >
             <div className="aspect-video w-full bg-ink-950/5">

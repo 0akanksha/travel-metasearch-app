@@ -10,7 +10,7 @@ function nowLocalISO() {
   return d.toISOString().slice(0, 16);
 }
 
-export default function CabSearchForm() {
+export default function CabSearchForm({ email }: { email?: string }) {
   const navigate = useNavigate();
   const [pickup, setPickup] = useState<GeoPlace | null>(null);
   const [dropoff, setDropoff] = useState<GeoPlace | null>(null);
@@ -37,6 +37,10 @@ export default function CabSearchForm() {
       dropoffLng: String(dropoff.lng),
       pickupTime,
     });
+    // Carried through from a trip's "Search cabs for this trip" CTA (see
+    // TripDetail.tsx / Cabs.tsx) so the guest-info form on the next page
+    // arrives pre-filled.
+    if (email) params.set("email", email);
     navigate(`/cabs/estimate?${params.toString()}`);
   }
 

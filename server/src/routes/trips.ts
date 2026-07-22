@@ -6,7 +6,16 @@ import { cabBookings, hotelBookings, tripFlights, trips } from "../db/schema.js"
 export const tripsRouter = Router();
 
 function serializeTrip(trip: typeof trips.$inferSelect) {
-  return { id: trip.id, email: trip.email, label: trip.label, createdAt: trip.createdAt.toISOString() };
+  return {
+    id: trip.id,
+    email: trip.email,
+    label: trip.label,
+    destinationLabel: trip.destinationLabel,
+    destinationRegionId: trip.destinationRegionId,
+    startDate: trip.startDate,
+    endDate: trip.endDate,
+    createdAt: trip.createdAt.toISOString(),
+  };
 }
 
 function serializeFlight(flight: typeof tripFlights.$inferSelect) {
@@ -93,12 +102,26 @@ tripsRouter.get("/", async (req, res) => {
 });
 
 tripsRouter.post("/", async (req, res) => {
-  const { email, label } = req.body as { email?: string; label?: string };
+  const { email, label, destinationLabel, destinationRegionId, startDate, endDate } = req.body as {
+    email?: string;
+    label?: string;
+    destinationLabel?: string;
+    destinationRegionId?: string;
+    startDate?: string;
+    endDate?: string;
+  };
   if (!email) return res.status(400).json({ error: "email is required" });
 
   const [trip] = await db
     .insert(trips)
-    .values({ email, label: label?.trim() || "My trip" })
+    .values({
+      email,
+      label: label?.trim() || "My trip",
+      destinationLabel: destinationLabel ?? null,
+      destinationRegionId: destinationRegionId ?? null,
+      startDate: startDate ?? null,
+      endDate: endDate ?? null,
+    })
     .returning();
 
   res.status(201).json({ trip: serializeTrip(trip) });
