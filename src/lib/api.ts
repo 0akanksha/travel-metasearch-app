@@ -1,4 +1,17 @@
-import type { CalendarDay, DestinationDeal, OfferSummary, Place, PriceAlert } from "./types";
+import type {
+  CabBooking,
+  CabEstimate,
+  CalendarDay,
+  DestinationDeal,
+  GeoPlace,
+  HotelBooking,
+  HotelDestination,
+  HotelDetail,
+  HotelSummary,
+  OfferSummary,
+  Place,
+  PriceAlert,
+} from "./types";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -127,6 +140,165 @@ export async function deleteAlert(id: string, token: string): Promise<boolean> {
   }
 }
 
+// --- Hotels ---
+
+export async function searchHotelDestinations(query: string): Promise<HotelDestination[]> {
+  if (query.trim().length < 2) return [];
+  try {
+    const { places } = await apiFetch<{ places: HotelDestination[] }>(`/stays/places?query=${encodeURIComponent(query)}`);
+    return places;
+  } catch {
+    return [];
+  }
+}
+
+export interface HotelSearchParams {
+  regionId: string;
+  cityLabel: string;
+  checkInDate: string;
+  checkOutDate: string;
+  guests: number;
+}
+
+export async function searchHotels(
+  params: HotelSearchParams,
+): Promise<{ ok: true; searchId: string; hotels: HotelSummary[] } | { ok: false; error: string }> {
+  try {
+    const { searchId, hotels } = await apiFetch<{ searchId: string; hotels: HotelSummary[] }>("/stays/search", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+    return { ok: true, searchId, hotels };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Hotel search failed" };
+  }
+}
+
+export async function getHotel(hotelId: string, searchId: string): Promise<HotelDetail | undefined> {
+  try {
+    const { hotel } = await apiFetch<{ hotel: HotelDetail }>(
+      `/stays/hotel/${encodeURIComponent(hotelId)}?searchId=${encodeURIComponent(searchId)}`,
+    );
+    return hotel;
+  } catch {
+    return undefined;
+  }
+}
+
+export interface BookHotelInput {
+  hotelId: string;
+  hotelName: string;
+  cityLabel: string;
+  price: number;
+  currency: string;
+  checkInDate: string;
+  checkOutDate: string;
+  guests: number;
+  guest: { name: string; email: string };
+}
+
+export async function bookHotel(
+  input: BookHotelInput,
+): Promise<{ ok: true; booking: HotelBooking } | { ok: false; error: string }> {
+  try {
+    const { booking } = await apiFetch<{ booking: HotelBooking }>("/stays/book", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return { ok: true, booking };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Booking failed" };
+  }
+}
+
+export async function getHotelBookingsByEmail(email: string): Promise<HotelBooking[]> {
+  try {
+    const { bookings } = await apiFetch<{ bookings: HotelBooking[] }>(`/stays/bookings?email=${encodeURIComponent(email)}`);
+    return bookings;
+  } catch {
+    return [];
+  }
+}
+
+export async function cancelHotelBooking(id: string, token: string): Promise<boolean> {
+  try {
+    await apiFetch(`/stays/bookings/${id}?token=${encodeURIComponent(token)}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// --- Cabs ---
+
+export async function searchCabPlaces(query: string): Promise<GeoPlace[]> {
+  if (query.trim().length < 3) return [];
+  try {
+    const { places } = await apiFetch<{ places: GeoPlace[] }>(`/cabs/places?query=${encodeURIComponent(query)}`);
+    return places;
+  } catch {
+    return [];
+  }
+}
+
+export async function estimateCab(
+  pickup: GeoPlace,
+  dropoff: GeoPlace,
+): Promise<{ ok: true; estimate: CabEstimate } | { ok: false; error: string }> {
+  try {
+    const estimate = await apiFetch<CabEstimate>("/cabs/estimate", {
+      method: "POST",
+      body: JSON.stringify({ pickup, dropoff }),
+    });
+    return { ok: true, estimate };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Fare estimate failed" };
+  }
+}
+
+export interface BookCabInput {
+  pickup: GeoPlace;
+  dropoff: GeoPlace;
+  distanceKm: number;
+  durationMin: number;
+  cabType: string;
+  fare: number;
+  pickupTime: string;
+  guest: { name: string; email: string; phone: string };
+}
+
+export async function bookCab(
+  input: BookCabInput,
+): Promise<{ ok: true; booking: CabBooking } | { ok: false; error: string }> {
+  try {
+    const { booking } = await apiFetch<{ booking: CabBooking }>("/cabs/book", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return { ok: true, booking };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Booking failed" };
+  }
+}
+
+export async function getCabBookingsByEmail(email: string): Promise<CabBooking[]> {
+  try {
+    const { bookings } = await apiFetch<{ bookings: CabBooking[] }>(`/cabs/bookings?email=${encodeURIComponent(email)}`);
+    return bookings;
+  } catch {
+    return [];
+  }
+}
+
+export async function cancelCabBooking(id: string, token: string): Promise<boolean> {
+  try {
+    await apiFetch(`/cabs/bookings/${id}?token=${encodeURIComponent(token)}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // --- Admin ---
 // Auth itself (login/logout/session) lives in contexts/AuthContext.tsx.
 
@@ -137,4 +309,14 @@ export async function adminListAlerts(): Promise<PriceAlert[]> {
 
 export async function adminRecheckAlerts(): Promise<{ checked: number }> {
   return apiFetch<{ checked: number }>("/admin/alerts/recheck", { method: "POST" });
+}
+
+export async function adminListHotelBookings(): Promise<HotelBooking[]> {
+  const { bookings } = await apiFetch<{ bookings: HotelBooking[] }>("/admin/stays");
+  return bookings;
+}
+
+export async function adminListCabBookings(): Promise<CabBooking[]> {
+  const { bookings } = await apiFetch<{ bookings: CabBooking[] }>("/admin/cabs");
+  return bookings;
 }

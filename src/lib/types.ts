@@ -49,6 +49,96 @@ export interface DestinationDeal {
   currency: string;
 }
 
+// --- Hotels (server/src/routes/stays.ts) ---
+
+export interface HotelDestination {
+  regionId: string;
+  type: string;
+  label: string;
+  secondaryLabel: string;
+}
+
+export interface HotelPrice {
+  amount: number;
+  currency: string;
+}
+
+export interface HotelSummary {
+  id: string;
+  name: string;
+  subtitle: string | null;
+  rating: number | null;
+  reviewCount: number;
+  photoUrl: string | null;
+  price: HotelPrice | null;
+}
+
+export interface HotelDetail extends HotelSummary {
+  cityLabel: string;
+  checkInDate: string;
+  checkOutDate: string;
+  guests: number;
+  photos: string[];
+  amenities: string[];
+}
+
+export interface HotelBooking {
+  id: string;
+  providerHotelId: string;
+  bookingReference: string;
+  hotelName: string;
+  cityLabel: string;
+  checkInDate: string;
+  checkOutDate: string;
+  guestCount: number;
+  totalAmount: number;
+  totalCurrency: string;
+  guestName: string;
+  guestEmail: string;
+  status: string;
+  cancelToken: string;
+  createdAt: string;
+}
+
+// --- Cabs (server/src/routes/cabs.ts) ---
+
+export interface GeoPlace {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+export interface CabFareOption {
+  cabType: string;
+  label: string;
+  seats: number;
+  fare: number;
+}
+
+export interface CabEstimate {
+  distanceKm: number;
+  durationMin: number;
+  options: CabFareOption[];
+}
+
+export interface CabBooking {
+  id: string;
+  pickupLabel: string;
+  dropoffLabel: string;
+  distanceKm: number;
+  durationMin: number;
+  cabType: string;
+  fare: number;
+  currency: string;
+  pickupTime: string;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  status: string;
+  cancelToken: string;
+  createdAt: string;
+}
+
 export interface PriceAlert {
   id: string;
   email: string;

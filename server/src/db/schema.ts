@@ -1,4 +1,4 @@
-import { numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Admin-only accounts — travelers never sign up or log in (booking and
 // alerts are both guest flows, see routes/duffel.ts and routes/alerts.ts).
@@ -31,5 +31,54 @@ export const priceAlerts = pgTable("price_alerts", {
   // Lets a guest (no login) manage/delete their own alert via a link,
   // same trust model as the Duffel booking-by-reference+email lookup.
   unsubscribeToken: text("unsubscribe_token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Hotels aren't stored locally either — the "Hotels.com Provider" RapidAPI
+// listing (lib/hotelsProvider.ts) is the search/pricing source of record.
+// But unlike Duffel, it's an unofficial listing with no booking-creation
+// endpoint, so a booking here is entirely local: this table *is* the
+// reservation record, not just a cache of one made elsewhere.
+export const hotelBookings = pgTable("hotel_bookings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  providerHotelId: text("provider_hotel_id").notNull(),
+  bookingReference: text("booking_reference").notNull(),
+  hotelName: text("hotel_name").notNull(),
+  cityLabel: text("city_label").notNull(),
+  checkInDate: text("check_in_date").notNull(), // YYYY-MM-DD
+  checkOutDate: text("check_out_date").notNull(),
+  guestCount: integer("guest_count").notNull(),
+  totalAmount: numeric("total_amount").notNull(),
+  totalCurrency: text("total_currency").notNull(),
+  guestName: text("guest_name").notNull(),
+  guestEmail: text("guest_email").notNull(),
+  status: text("status").notNull().default("confirmed"),
+  // Guest-only management (no login), same trust model as priceAlerts above.
+  cancelToken: text("cancel_token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Cabs have no external booking system at all (see lib/routing.ts) — this
+// table is the sole record of a ride, priced from a local rate table
+// against a real route (Nominatim geocoding + OSRM driving distance).
+export const cabBookings = pgTable("cab_bookings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  pickupLabel: text("pickup_label").notNull(),
+  pickupLat: numeric("pickup_lat").notNull(),
+  pickupLng: numeric("pickup_lng").notNull(),
+  dropoffLabel: text("dropoff_label").notNull(),
+  dropoffLat: numeric("dropoff_lat").notNull(),
+  dropoffLng: numeric("dropoff_lng").notNull(),
+  distanceKm: numeric("distance_km").notNull(),
+  durationMin: numeric("duration_min").notNull(),
+  cabType: text("cab_type").notNull(),
+  fare: numeric("fare").notNull(),
+  currency: text("currency").notNull().default("USD"),
+  pickupTime: timestamp("pickup_time", { withTimezone: true }).notNull(),
+  guestName: text("guest_name").notNull(),
+  guestEmail: text("guest_email").notNull(),
+  guestPhone: text("guest_phone").notNull(),
+  status: text("status").notNull().default("confirmed"),
+  cancelToken: text("cancel_token").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

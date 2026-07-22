@@ -9,6 +9,8 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import { duffelRouter } from "./routes/duffel.js";
 import { alertsRouter, alertsAdminRouter } from "./routes/alerts.js";
+import { staysRouter, staysAdminRouter } from "./routes/stays.js";
+import { cabsRouter, cabsAdminRouter } from "./routes/cabs.js";
 import { authRouter } from "./routes/auth.js";
 import { requireAdmin, requireAuth } from "./middleware/auth.js";
 import { ensureAdminSeeded } from "./lib/ensureAdmin.js";
@@ -26,6 +28,10 @@ app.use("/api/auth", authRouter);
 app.use("/api/duffel", duffelRouter);
 app.use("/api/alerts", alertsRouter);
 app.use("/api/admin/alerts", requireAuth, requireAdmin, alertsAdminRouter);
+app.use("/api/stays", staysRouter);
+app.use("/api/admin/stays", requireAuth, requireAdmin, staysAdminRouter);
+app.use("/api/cabs", cabsRouter);
+app.use("/api/admin/cabs", requireAuth, requireAdmin, cabsAdminRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
