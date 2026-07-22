@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { CalendarDays, MapPinned, Search } from "lucide-react";
+import { CalendarDays, Compass, MapPinned, Search } from "lucide-react";
 import { createTrip, listTrips } from "../lib/api";
 import type { TripSummary } from "../lib/types";
 import { formatDate } from "../lib/format";
@@ -15,6 +15,9 @@ export default function MyTrip() {
   const navigate = useNavigate();
   const [lookupEmail, setLookupEmail] = useState(searchParams.get("email") ?? "");
   const [trips, setTrips] = useState<TripSummary[] | null>(null);
+  // Arrives from /explore's "Plan a trip here" — prefills the destination
+  // field's text; DestinationAutocomplete resolves real matches on mount.
+  const destinationQuery = searchParams.get("destinationQuery") ?? undefined;
 
   const [planEmail, setPlanEmail] = useState("");
   const [planLabel, setPlanLabel] = useState("");
@@ -57,9 +60,15 @@ export default function MyTrip() {
         <p className="text-xs font-semibold uppercase tracking-wide">My trip</p>
       </div>
       <h1 className="mb-1 text-2xl font-bold text-ink-950">Plan a trip, then book into it</h1>
-      <p className="mb-8 text-sm text-ink-900/60">
+      <p className="mb-4 text-sm text-ink-900/60">
         No account needed — start a trip with a destination and dates, then search flights, hotels, and cabs for it.
       </p>
+      <Link
+        to="/explore"
+        className="mb-8 inline-flex items-center gap-1.5 text-sm font-semibold text-pine-600 hover:text-pine-700"
+      >
+        <Compass className="h-4 w-4" /> Not sure where yet? Explore destinations
+      </Link>
 
       <form onSubmit={handlePlan} className="mb-10 flex flex-col gap-4 rounded-xl border border-ink-900/10 bg-white p-6">
         <h2 className="text-sm font-bold text-ink-950">Plan a new trip</h2>
@@ -67,6 +76,7 @@ export default function MyTrip() {
           <DestinationAutocomplete
             label="Destination"
             placeholder="City or neighborhood"
+            initialLabel={destinationQuery}
             onSelect={(d) => {
               setDestinationRegionId(d.regionId);
               setDestinationLabel(d.label);

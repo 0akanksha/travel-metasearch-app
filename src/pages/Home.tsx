@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Bell, CalendarRange, Compass, Globe2 } from "lucide-react";
 import SearchForm from "../components/SearchForm";
 
@@ -37,6 +37,12 @@ export default function Home() {
         </div>
         <div className="relative mx-auto mt-10 max-w-5xl px-4 sm:px-6">
           <SearchForm initial={{ destinationLabel, date, returnDate, email }} />
+          <Link
+            to="/explore"
+            className="mt-4 flex items-center justify-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white"
+          >
+            <Compass className="h-4 w-4" /> Not sure where to go? Explore destinations
+          </Link>
         </div>
       </section>
 

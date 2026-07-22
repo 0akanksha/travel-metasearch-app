@@ -21,6 +21,7 @@ import CabConfirmation from "./pages/CabConfirmation";
 import CabBookings from "./pages/CabBookings";
 import MyTrip from "./pages/MyTrip";
 import TripDetail from "./pages/TripDetail";
+import Explore from "./pages/Explore";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/cabs/confirmation/:bookingId" element={<CabConfirmation />} />
               <Route path="/trip" element={<MyTrip />} />
               <Route path="/trip/:tripId" element={<TripDetail />} />
+              <Route path="/explore" element={<Explore />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<AdminDashboard />} />
