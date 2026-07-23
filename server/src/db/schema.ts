@@ -104,6 +104,33 @@ export const hotelBookings = pgTable("hotel_bookings", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// A forex-card order — like hotels/cabs, this is entirely local (no real
+// card issuer or payment processor); unlike them, the price it locks in is
+// backed by a genuinely live source (lib/forex.ts, api.frankfurter.dev).
+export const forexOrders = pgTable("forex_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // Nullable — attaching to a trip is optional, see TripPicker.tsx.
+  tripId: uuid("trip_id").references(() => trips.id),
+  toCurrency: text("to_currency").notNull(),
+  amountForeign: numeric("amount_foreign").notNull(),
+  // INR per 1 unit of toCurrency, locked at order time (re-fetched
+  // server-side at booking time, never trusted from the client).
+  exchangeRate: numeric("exchange_rate").notNull(),
+  amountInr: numeric("amount_inr").notNull(),
+  travelDestination: text("travel_destination"),
+  travelDate: text("travel_date"), // YYYY-MM-DD
+  deliveryAddress: text("delivery_address").notNull(),
+  deliveryCity: text("delivery_city").notNull(),
+  deliveryPostalCode: text("delivery_postal_code").notNull(),
+  guestName: text("guest_name").notNull(),
+  guestEmail: text("guest_email").notNull(),
+  guestPhone: text("guest_phone").notNull(),
+  status: text("status").notNull().default("confirmed"),
+  orderReference: text("order_reference").notNull(),
+  cancelToken: text("cancel_token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Cabs have no external booking system at all (see lib/routing.ts) — this
 // table is the sole record of a ride, priced from a local rate table
 // against a real route (Nominatim geocoding + OSRM driving distance).

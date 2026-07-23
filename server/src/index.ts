@@ -12,6 +12,7 @@ import { alertsRouter, alertsAdminRouter } from "./routes/alerts.js";
 import { staysRouter, staysAdminRouter } from "./routes/stays.js";
 import { cabsRouter, cabsAdminRouter } from "./routes/cabs.js";
 import { tripsRouter } from "./routes/trips.js";
+import { forexRouter, forexAdminRouter } from "./routes/forex.js";
 import { chatRouter } from "./routes/chat.js";
 import { authRouter } from "./routes/auth.js";
 import { requireAdmin, requireAuth } from "./middleware/auth.js";
@@ -35,6 +36,8 @@ app.use("/api/admin/stays", requireAuth, requireAdmin, staysAdminRouter);
 app.use("/api/cabs", cabsRouter);
 app.use("/api/admin/cabs", requireAuth, requireAdmin, cabsAdminRouter);
 app.use("/api/trips", tripsRouter);
+app.use("/api/forex", forexRouter);
+app.use("/api/admin/forex", requireAuth, requireAdmin, forexAdminRouter);
 app.use("/api/chat", chatRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

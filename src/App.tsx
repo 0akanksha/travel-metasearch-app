@@ -22,6 +22,9 @@ import CabBookings from "./pages/CabBookings";
 import MyTrip from "./pages/MyTrip";
 import TripDetail from "./pages/TripDetail";
 import Explore from "./pages/Explore";
+import Forex from "./pages/Forex";
+import ForexConfirmation from "./pages/ForexConfirmation";
+import ForexOrders from "./pages/ForexOrders";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -51,6 +54,9 @@ export default function App() {
               <Route path="/trip" element={<MyTrip />} />
               <Route path="/trip/:tripId" element={<TripDetail />} />
               <Route path="/explore" element={<Explore />} />
+              <Route path="/forex" element={<Forex />} />
+              <Route path="/forex/orders" element={<ForexOrders />} />
+              <Route path="/forex/confirmation/:orderId" element={<ForexConfirmation />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<AdminDashboard />} />

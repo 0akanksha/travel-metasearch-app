@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { adminListAlerts, adminListCabBookings, adminListHotelBookings, adminRecheckAlerts } from "../lib/api";
-import type { CabBooking, HotelBooking, PriceAlert } from "../lib/types";
+import {
+  adminListAlerts,
+  adminListCabBookings,
+  adminListForexOrders,
+  adminListHotelBookings,
+  adminRecheckAlerts,
+} from "../lib/api";
+import type { CabBooking, ForexOrder, HotelBooking, PriceAlert } from "../lib/types";
 import { formatDate, formatMoney, formatShortDate } from "../lib/format";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -11,17 +17,19 @@ export default function AdminDashboard() {
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
   const [hotelBookings, setHotelBookings] = useState<HotelBooking[]>([]);
   const [cabBookings, setCabBookings] = useState<CabBooking[]>([]);
+  const [forexOrders, setForexOrders] = useState<ForexOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [rechecking, setRechecking] = useState(false);
   const [recheckMessage, setRecheckMessage] = useState("");
 
   useEffect(() => {
-    Promise.all([adminListAlerts(), adminListHotelBookings(), adminListCabBookings()])
-      .then(([a, h, c]) => {
+    Promise.all([adminListAlerts(), adminListHotelBookings(), adminListCabBookings(), adminListForexOrders()])
+      .then(([a, h, c, f]) => {
         setAlerts(a);
         setHotelBookings(h);
         setCabBookings(c);
+        setForexOrders(f);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load dashboard data"))
       .finally(() => setLoading(false));
@@ -51,7 +59,7 @@ export default function AdminDashboard() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-ink-950">Admin dashboard</h1>
-          <p className="text-sm text-ink-900/60">Price alerts, hotel bookings, and cab bookings from travelers.</p>
+          <p className="text-sm text-ink-900/60">Price alerts, hotel bookings, cab bookings, and forex orders from travelers.</p>
         </div>
         <button
           onClick={handleLogout}
@@ -199,6 +207,48 @@ export default function AdminDashboard() {
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-ink-900/50">
                         No cab bookings yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-lg font-bold text-ink-950">Forex orders</h2>
+            <div className="overflow-x-auto rounded-xl border border-ink-900/10 bg-white">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-ink-900/10 text-xs uppercase tracking-wide text-ink-900/50">
+                  <tr>
+                    <th className="px-4 py-3">Guest</th>
+                    <th className="px-4 py-3">Currency &amp; amount</th>
+                    <th className="px-4 py-3">INR total</th>
+                    <th className="px-4 py-3">Delivery</th>
+                    <th className="px-4 py-3">Reference</th>
+                    <th className="px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {forexOrders.map((o) => (
+                    <tr key={o.id} className="border-b border-ink-900/5 last:border-0">
+                      <td className="px-4 py-3">
+                        {o.guestName}
+                        <div className="text-xs text-ink-900/50">{o.guestEmail}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {o.toCurrency} {o.amountForeign.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">{formatMoney(o.amountInr, "INR")}</td>
+                      <td className="px-4 py-3">{o.deliveryCity}</td>
+                      <td className="px-4 py-3 font-mono text-xs">{o.orderReference}</td>
+                      <td className="px-4 py-3 capitalize">{o.status}</td>
+                    </tr>
+                  ))}
+                  {forexOrders.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-ink-900/50">
+                        No forex orders yet.
                       </td>
                     </tr>
                   )}

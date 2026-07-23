@@ -3,6 +3,8 @@ import type {
   CabEstimate,
   CalendarDay,
   DestinationDeal,
+  ForexCurrency,
+  ForexOrder,
   GeoPlace,
   HotelBooking,
   HotelDestination,
@@ -304,6 +306,70 @@ export async function cancelCabBooking(id: string, token: string): Promise<boole
   }
 }
 
+// --- Forex Card ---
+
+export async function listForexCurrencies(): Promise<ForexCurrency[]> {
+  try {
+    const { currencies } = await apiFetch<{ currencies: ForexCurrency[] }>("/forex/currencies");
+    return currencies;
+  } catch {
+    return [];
+  }
+}
+
+export async function getForexRate(currency: string): Promise<{ ok: true; rate: number } | { ok: false; error: string }> {
+  try {
+    const { rate } = await apiFetch<{ rate: number }>(`/forex/rate?currency=${encodeURIComponent(currency)}`);
+    return { ok: true, rate };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Rate lookup failed" };
+  }
+}
+
+export interface OrderForexCardInput {
+  toCurrency: string;
+  amountForeign: number;
+  travelDestination?: string;
+  travelDate?: string;
+  deliveryAddress: string;
+  deliveryCity: string;
+  deliveryPostalCode: string;
+  guest: { name: string; email: string; phone: string };
+  tripId?: string;
+}
+
+export async function orderForexCard(
+  input: OrderForexCardInput,
+): Promise<{ ok: true; order: ForexOrder } | { ok: false; error: string }> {
+  try {
+    const { order } = await apiFetch<{ order: ForexOrder }>("/forex/order", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return { ok: true, order };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Order failed" };
+  }
+}
+
+export async function getForexOrdersByEmail(email: string): Promise<ForexOrder[]> {
+  try {
+    const { orders } = await apiFetch<{ orders: ForexOrder[] }>(`/forex/orders?email=${encodeURIComponent(email)}`);
+    return orders;
+  } catch {
+    return [];
+  }
+}
+
+export async function cancelForexOrder(id: string, token: string): Promise<boolean> {
+  try {
+    await apiFetch(`/forex/orders/${id}?token=${encodeURIComponent(token)}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // --- Trips ---
 
 export async function listTrips(email: string): Promise<TripSummary[]> {
@@ -396,4 +462,9 @@ export async function adminListHotelBookings(): Promise<HotelBooking[]> {
 export async function adminListCabBookings(): Promise<CabBooking[]> {
   const { bookings } = await apiFetch<{ bookings: CabBooking[] }>("/admin/cabs");
   return bookings;
+}
+
+export async function adminListForexOrders(): Promise<ForexOrder[]> {
+  const { orders } = await apiFetch<{ orders: ForexOrder[] }>("/admin/forex");
+  return orders;
 }

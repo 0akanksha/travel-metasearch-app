@@ -141,6 +141,35 @@ export interface CabBooking {
   createdAt: string;
 }
 
+// --- Forex Card (server/src/routes/forex.ts) ---
+
+export interface ForexCurrency {
+  code: string;
+  name: string;
+  flag: string;
+}
+
+export interface ForexOrder {
+  id: string;
+  tripId?: string | null;
+  toCurrency: string;
+  amountForeign: number;
+  exchangeRate: number;
+  amountInr: number;
+  travelDestination: string | null;
+  travelDate: string | null;
+  deliveryAddress: string;
+  deliveryCity: string;
+  deliveryPostalCode: string;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  status: string;
+  orderReference: string;
+  cancelToken: string;
+  createdAt: string;
+}
+
 // --- Trips (server/src/routes/trips.ts) ---
 // Bundles a flight snapshot + hotel/cab bookings under one guest-owned
 // grouping. Flights have no local booking (FareCompass is metasearch-only
@@ -163,6 +192,7 @@ export interface TripSummary extends Trip {
   flightCount: number;
   hotelCount: number;
   cabCount: number;
+  forexCount: number;
 }
 
 export interface TripFlight {
@@ -186,6 +216,7 @@ export interface TripDetail {
   flights: TripFlight[];
   hotels: HotelBooking[];
   cabs: CabBooking[];
+  forexOrders: ForexOrder[];
 }
 
 // What TripPicker.tsx reports back to the page hosting it — the page
