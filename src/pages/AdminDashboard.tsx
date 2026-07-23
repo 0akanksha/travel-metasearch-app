@@ -5,9 +5,10 @@ import {
   adminListCabBookings,
   adminListForexOrders,
   adminListHotelBookings,
+  adminListInsurancePolicies,
   adminRecheckAlerts,
 } from "../lib/api";
-import type { CabBooking, ForexOrder, HotelBooking, PriceAlert } from "../lib/types";
+import type { CabBooking, ForexOrder, HotelBooking, InsurancePolicy, PriceAlert } from "../lib/types";
 import { formatDate, formatMoney, formatShortDate } from "../lib/format";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -18,18 +19,26 @@ export default function AdminDashboard() {
   const [hotelBookings, setHotelBookings] = useState<HotelBooking[]>([]);
   const [cabBookings, setCabBookings] = useState<CabBooking[]>([]);
   const [forexOrders, setForexOrders] = useState<ForexOrder[]>([]);
+  const [insurancePolicies, setInsurancePolicies] = useState<InsurancePolicy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [rechecking, setRechecking] = useState(false);
   const [recheckMessage, setRecheckMessage] = useState("");
 
   useEffect(() => {
-    Promise.all([adminListAlerts(), adminListHotelBookings(), adminListCabBookings(), adminListForexOrders()])
-      .then(([a, h, c, f]) => {
+    Promise.all([
+      adminListAlerts(),
+      adminListHotelBookings(),
+      adminListCabBookings(),
+      adminListForexOrders(),
+      adminListInsurancePolicies(),
+    ])
+      .then(([a, h, c, f, i]) => {
         setAlerts(a);
         setHotelBookings(h);
         setCabBookings(c);
         setForexOrders(f);
+        setInsurancePolicies(i);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load dashboard data"))
       .finally(() => setLoading(false));
@@ -59,7 +68,9 @@ export default function AdminDashboard() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-ink-950">Admin dashboard</h1>
-          <p className="text-sm text-ink-900/60">Price alerts, hotel bookings, cab bookings, and forex orders from travelers.</p>
+          <p className="text-sm text-ink-900/60">
+            Price alerts, hotel bookings, cab bookings, forex orders, and insurance policies from travelers.
+          </p>
         </div>
         <button
           onClick={handleLogout}
@@ -249,6 +260,50 @@ export default function AdminDashboard() {
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-ink-900/50">
                         No forex orders yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-lg font-bold text-ink-950">Insurance policies</h2>
+            <div className="overflow-x-auto rounded-xl border border-ink-900/10 bg-white">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-ink-900/10 text-xs uppercase tracking-wide text-ink-900/50">
+                  <tr>
+                    <th className="px-4 py-3">Guest</th>
+                    <th className="px-4 py-3">Plan &amp; travelers</th>
+                    <th className="px-4 py-3">Premium (INR)</th>
+                    <th className="px-4 py-3">Trip dates</th>
+                    <th className="px-4 py-3">Reference</th>
+                    <th className="px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {insurancePolicies.map((p) => (
+                    <tr key={p.id} className="border-b border-ink-900/5 last:border-0">
+                      <td className="px-4 py-3">
+                        {p.guestName}
+                        <div className="text-xs text-ink-900/50">{p.guestEmail}</div>
+                      </td>
+                      <td className="px-4 py-3 capitalize">
+                        {p.planId} &middot; {p.travelers.length} traveler{p.travelers.length === 1 ? "" : "s"}
+                      </td>
+                      <td className="px-4 py-3">{formatMoney(p.premiumInr, "INR")}</td>
+                      <td className="px-4 py-3">
+                        {formatShortDate(p.startDate)} – {formatShortDate(p.endDate)}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs">{p.policyReference}</td>
+                      <td className="px-4 py-3 capitalize">{p.status}</td>
+                    </tr>
+                  ))}
+                  {insurancePolicies.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-ink-900/50">
+                        No insurance policies yet.
                       </td>
                     </tr>
                   )}

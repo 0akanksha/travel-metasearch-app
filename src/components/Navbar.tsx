@@ -9,6 +9,7 @@ const NAV_LINKS: { to: string; label: string; end?: boolean }[] = [
   { to: "/cabs", label: "Cabs" },
   { to: "/explore", label: "Explore" },
   { to: "/forex", label: "Forex Card" },
+  { to: "/insurance", label: "Insurance" },
   { to: "/trip", label: "My Trip" },
   { to: "/alerts", label: "Price alerts" },
   { to: "/admin", label: "Admin" },

@@ -170,6 +170,42 @@ export interface ForexOrder {
   createdAt: string;
 }
 
+// --- Travel Insurance (server/src/routes/insurance.ts) ---
+
+export interface InsurancePlan {
+  id: string;
+  label: string;
+  sumInsuredUsd: number;
+  perDayRate: number;
+  description: string;
+  features: string[];
+}
+
+export interface InsuranceTraveler {
+  name: string;
+  age: number;
+}
+
+export interface InsurancePolicy {
+  id: string;
+  tripId?: string | null;
+  planId: string;
+  tripType: string;
+  destination: string | null;
+  startDate: string;
+  endDate: string;
+  travelers: InsuranceTraveler[];
+  sumInsuredUsd: number;
+  premiumInr: number;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  status: string;
+  policyReference: string;
+  cancelToken: string;
+  createdAt: string;
+}
+
 // --- Trips (server/src/routes/trips.ts) ---
 // Bundles a flight snapshot + hotel/cab bookings under one guest-owned
 // grouping. Flights have no local booking (FareCompass is metasearch-only
@@ -193,6 +229,7 @@ export interface TripSummary extends Trip {
   hotelCount: number;
   cabCount: number;
   forexCount: number;
+  insuranceCount: number;
 }
 
 export interface TripFlight {
@@ -217,6 +254,7 @@ export interface TripDetail {
   hotels: HotelBooking[];
   cabs: CabBooking[];
   forexOrders: ForexOrder[];
+  insurancePolicies: InsurancePolicy[];
 }
 
 // What TripPicker.tsx reports back to the page hosting it — the page

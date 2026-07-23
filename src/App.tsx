@@ -25,6 +25,9 @@ import Explore from "./pages/Explore";
 import Forex from "./pages/Forex";
 import ForexConfirmation from "./pages/ForexConfirmation";
 import ForexOrders from "./pages/ForexOrders";
+import Insurance from "./pages/Insurance";
+import InsuranceConfirmation from "./pages/InsuranceConfirmation";
+import InsurancePolicies from "./pages/InsurancePolicies";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -57,6 +60,9 @@ export default function App() {
               <Route path="/forex" element={<Forex />} />
               <Route path="/forex/orders" element={<ForexOrders />} />
               <Route path="/forex/confirmation/:orderId" element={<ForexConfirmation />} />
+              <Route path="/insurance" element={<Insurance />} />
+              <Route path="/insurance/policies" element={<InsurancePolicies />} />
+              <Route path="/insurance/confirmation/:policyId" element={<InsuranceConfirmation />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<AdminDashboard />} />

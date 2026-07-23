@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { AlertTriangle, BedDouble, Car, CreditCard, ExternalLink, Plane, Plus, Trash2 } from "lucide-react";
-import { cancelCabBooking, cancelForexOrder, cancelHotelBooking, getTrip } from "../lib/api";
-import type { CabBooking, ForexOrder, HotelBooking, TripDetail as TripDetailType } from "../lib/types";
+import { AlertTriangle, BedDouble, Car, CreditCard, ExternalLink, Plane, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { cancelCabBooking, cancelForexOrder, cancelHotelBooking, cancelInsurancePolicy, getTrip } from "../lib/api";
+import type { CabBooking, ForexOrder, HotelBooking, InsurancePolicy, TripDetail as TripDetailType } from "../lib/types";
 import { formatDate, formatMoney, formatShortDate } from "../lib/format";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -67,6 +67,16 @@ export default function TripDetail() {
     }
   }
 
+  async function handleCancelInsurance(policy: InsurancePolicy) {
+    const ok = await cancelInsurancePolicy(policy.id, policy.cancelToken);
+    if (ok && trip) {
+      setTrip({
+        ...trip,
+        insurancePolicies: trip.insurancePolicies.map((p) => (p.id === policy.id ? { ...p, status: "cancelled" } : p)),
+      });
+    }
+  }
+
   const { destinationLabel, destinationRegionId, startDate, endDate } = trip.trip;
 
   const hotelsHref = destinationRegionId
@@ -92,6 +102,12 @@ export default function TripDetail() {
     : "/";
 
   const forexHref = `/forex?${new URLSearchParams({
+    ...(destinationLabel ? { travelDestination: destinationLabel } : {}),
+    ...(startDate ? { travelDate: startDate } : {}),
+    email: trip.trip.email,
+  }).toString()}`;
+
+  const insuranceHref = `/insurance?${new URLSearchParams({
     ...(destinationLabel ? { travelDestination: destinationLabel } : {}),
     ...(startDate ? { travelDate: startDate } : {}),
     email: trip.trip.email,
@@ -290,6 +306,51 @@ export default function TripDetail() {
                     <button
                       onClick={() => handleCancelForex(order)}
                       aria-label="Cancel forex order"
+                      className="rounded-lg p-2 text-ink-900/40 transition hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-ink-900/60">
+              <ShieldCheck className="h-4 w-4" /> Travel Insurance
+            </h2>
+            <Link
+              to={insuranceHref}
+              className="flex items-center gap-1.5 rounded-lg border border-coral-500/30 bg-coral-500/10 px-3 py-1.5 text-xs font-bold text-coral-600 transition hover:bg-coral-500/20"
+            >
+              <Plus className="h-3.5 w-3.5" /> Get insurance for this trip
+            </Link>
+          </div>
+          <div className="flex flex-col gap-3">
+            {trip.insurancePolicies.length === 0 && (
+              <p className="rounded-xl border border-dashed border-ink-900/15 py-6 text-center text-sm text-ink-900/60">
+                No insurance policy bought yet.
+              </p>
+            )}
+            {trip.insurancePolicies.map((policy) => (
+              <div key={policy.id} className="rounded-xl border border-ink-900/10 bg-white p-5">
+                <p className="font-bold capitalize text-ink-950">
+                  {policy.planId} plan &middot; {policy.tripType}
+                  {policy.status === "cancelled" && <span className="ml-2 text-xs font-normal text-red-600">Cancelled</span>}
+                </p>
+                <p className="text-sm text-ink-900/70">
+                  {formatShortDate(policy.startDate)} – {formatShortDate(policy.endDate)} &middot; {policy.travelers.length} traveler
+                  {policy.travelers.length === 1 ? "" : "s"}
+                </p>
+                <div className="mt-3 flex items-center justify-between">
+                  <p className="text-lg font-extrabold text-ink-950">{formatMoney(policy.premiumInr, "INR")}</p>
+                  {policy.status !== "cancelled" && (
+                    <button
+                      onClick={() => handleCancelInsurance(policy)}
+                      aria-label="Cancel insurance policy"
                       className="rounded-lg p-2 text-ink-900/40 transition hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />

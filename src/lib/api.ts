@@ -10,6 +10,9 @@ import type {
   HotelDestination,
   HotelDetail,
   HotelSummary,
+  InsurancePlan,
+  InsurancePolicy,
+  InsuranceTraveler,
   OfferSummary,
   Place,
   PriceAlert,
@@ -370,6 +373,82 @@ export async function cancelForexOrder(id: string, token: string): Promise<boole
   }
 }
 
+// --- Travel Insurance ---
+
+export async function listInsurancePlans(): Promise<InsurancePlan[]> {
+  try {
+    const { plans } = await apiFetch<{ plans: InsurancePlan[] }>("/insurance/plans");
+    return plans;
+  } catch {
+    return [];
+  }
+}
+
+export interface InsuranceQuoteInput {
+  planId: string;
+  tripType: "domestic" | "international";
+  startDate: string;
+  endDate: string;
+  travelerAges: number[];
+}
+
+export async function getInsuranceQuote(
+  input: InsuranceQuoteInput,
+): Promise<{ ok: true; premiumInr: number; sumInsuredUsd: number } | { ok: false; error: string }> {
+  try {
+    const result = await apiFetch<{ premiumInr: number; sumInsuredUsd: number }>("/insurance/quote", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return { ok: true, ...result };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Quote failed" };
+  }
+}
+
+export interface BuyInsurancePolicyInput {
+  planId: string;
+  tripType: "domestic" | "international";
+  destination?: string;
+  startDate: string;
+  endDate: string;
+  travelers: InsuranceTraveler[];
+  guest: { name: string; email: string; phone: string };
+  tripId?: string;
+}
+
+export async function buyInsurancePolicy(
+  input: BuyInsurancePolicyInput,
+): Promise<{ ok: true; policy: InsurancePolicy } | { ok: false; error: string }> {
+  try {
+    const { policy } = await apiFetch<{ policy: InsurancePolicy }>("/insurance/policy", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return { ok: true, policy };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Purchase failed" };
+  }
+}
+
+export async function getInsurancePoliciesByEmail(email: string): Promise<InsurancePolicy[]> {
+  try {
+    const { policies } = await apiFetch<{ policies: InsurancePolicy[] }>(`/insurance/policies?email=${encodeURIComponent(email)}`);
+    return policies;
+  } catch {
+    return [];
+  }
+}
+
+export async function cancelInsurancePolicy(id: string, token: string): Promise<boolean> {
+  try {
+    await apiFetch(`/insurance/policies/${id}?token=${encodeURIComponent(token)}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // --- Trips ---
 
 export async function listTrips(email: string): Promise<TripSummary[]> {
@@ -467,4 +546,9 @@ export async function adminListCabBookings(): Promise<CabBooking[]> {
 export async function adminListForexOrders(): Promise<ForexOrder[]> {
   const { orders } = await apiFetch<{ orders: ForexOrder[] }>("/admin/forex");
   return orders;
+}
+
+export async function adminListInsurancePolicies(): Promise<InsurancePolicy[]> {
+  const { policies } = await apiFetch<{ policies: InsurancePolicy[] }>("/admin/insurance");
+  return policies;
 }

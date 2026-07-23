@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { cabBookings, forexOrders, hotelBookings, tripFlights, trips } from "../db/schema.js";
+import { cabBookings, forexOrders, hotelBookings, insurancePolicies, tripFlights, trips } from "../db/schema.js";
 
 export const tripsRouter = Router();
 
@@ -102,6 +102,29 @@ function serializeForexOrder(order: typeof forexOrders.$inferSelect) {
   };
 }
 
+// Same shape routes/insurance.ts's serializePolicy produces — kept in sync
+// manually since this is the only other place that reads insurancePolicies.
+function serializeInsurancePolicy(policy: typeof insurancePolicies.$inferSelect) {
+  return {
+    id: policy.id,
+    planId: policy.planId,
+    tripType: policy.tripType,
+    destination: policy.destination,
+    startDate: policy.startDate,
+    endDate: policy.endDate,
+    travelers: JSON.parse(policy.travelersJson) as { name: string; age: number }[],
+    sumInsuredUsd: Number(policy.sumInsuredUsd),
+    premiumInr: Number(policy.premiumInr),
+    guestName: policy.guestName,
+    guestEmail: policy.guestEmail,
+    guestPhone: policy.guestPhone,
+    status: policy.status,
+    policyReference: policy.policyReference,
+    cancelToken: policy.cancelToken,
+    createdAt: policy.createdAt.toISOString(),
+  };
+}
+
 tripsRouter.get("/", async (req, res) => {
   const email = typeof req.query.email === "string" ? req.query.email : "";
   if (!email) return res.status(400).json({ error: "email is required" });
@@ -113,13 +136,14 @@ tripsRouter.get("/", async (req, res) => {
 
   const withCounts = await Promise.all(
     tripRows.map(async (trip) => {
-      const [flightCount, hotelCount, cabCount, forexCount] = await Promise.all([
+      const [flightCount, hotelCount, cabCount, forexCount, insuranceCount] = await Promise.all([
         db.query.tripFlights.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.hotelBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.cabBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.forexOrders.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
+        db.query.insurancePolicies.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
       ]);
-      return { ...serializeTrip(trip), flightCount, hotelCount, cabCount, forexCount };
+      return { ...serializeTrip(trip), flightCount, hotelCount, cabCount, forexCount, insuranceCount };
     }),
   );
 
@@ -165,11 +189,12 @@ tripsRouter.get("/:id", async (req, res) => {
   const trip = await findOwnedTrip(req.params.id, email);
   if (!trip) return res.status(404).json({ error: "Trip not found" });
 
-  const [flights, hotels, cabs, forex] = await Promise.all([
+  const [flights, hotels, cabs, forex, insurance] = await Promise.all([
     db.query.tripFlights.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.hotelBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.cabBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.forexOrders.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
+    db.query.insurancePolicies.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
   ]);
 
   res.json({
@@ -178,6 +203,7 @@ tripsRouter.get("/:id", async (req, res) => {
     hotels: hotels.map(serializeHotelBooking),
     cabs: cabs.map(serializeCabBooking),
     forexOrders: forex.map(serializeForexOrder),
+    insurancePolicies: insurance.map(serializeInsurancePolicy),
   });
 });
 

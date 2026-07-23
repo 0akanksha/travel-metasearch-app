@@ -131,6 +131,34 @@ export const forexOrders = pgTable("forex_orders", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// A travel-insurance policy — like forex, this is entirely local, but unlike
+// it there's no live external quoting API to call (no self-serve insurer
+// integration exists), so the premium is computed from a local rate table
+// (lib/insuranceRates.ts) the same way cabBookings' fare is computed from a
+// local rate table against a real route.
+export const insurancePolicies = pgTable("insurance_policies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // Nullable — attaching to a trip is optional, see TripPicker.tsx.
+  tripId: uuid("trip_id").references(() => trips.id),
+  planId: text("plan_id").notNull(), // "basic" | "standard" | "premium"
+  tripType: text("trip_type").notNull(), // "domestic" | "international"
+  destination: text("destination"),
+  startDate: text("start_date").notNull(), // YYYY-MM-DD
+  endDate: text("end_date").notNull(),
+  // JSON.stringify({ name, age }[]) — no jsonb used elsewhere in this schema,
+  // stays consistent with the rest of the table's flat-text-column style.
+  travelersJson: text("travelers_json").notNull(),
+  sumInsuredUsd: numeric("sum_insured_usd").notNull(), // fixed per plan, informational
+  premiumInr: numeric("premium_inr").notNull(), // computed, what the guest pays
+  guestName: text("guest_name").notNull(),
+  guestEmail: text("guest_email").notNull(),
+  guestPhone: text("guest_phone").notNull(),
+  status: text("status").notNull().default("confirmed"),
+  policyReference: text("policy_reference").notNull(),
+  cancelToken: text("cancel_token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Cabs have no external booking system at all (see lib/routing.ts) — this
 // table is the sole record of a ride, priced from a local rate table
 // against a real route (Nominatim geocoding + OSRM driving distance).
