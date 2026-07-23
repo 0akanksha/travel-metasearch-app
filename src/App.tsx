@@ -32,6 +32,10 @@ import Cruises from "./pages/Cruises";
 import CruiseDetail from "./pages/CruiseDetail";
 import CruiseConfirmation from "./pages/CruiseConfirmation";
 import CruiseBookings from "./pages/CruiseBookings";
+import Visas from "./pages/Visas";
+import VisaDetail from "./pages/VisaDetail";
+import VisaConfirmation from "./pages/VisaConfirmation";
+import VisaApplications from "./pages/VisaApplications";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -71,6 +75,10 @@ export default function App() {
               <Route path="/cruises/bookings" element={<CruiseBookings />} />
               <Route path="/cruises/confirmation/:bookingId" element={<CruiseConfirmation />} />
               <Route path="/cruises/:itineraryId" element={<CruiseDetail />} />
+              <Route path="/visas" element={<Visas />} />
+              <Route path="/visas/applications" element={<VisaApplications />} />
+              <Route path="/visas/confirmation/:applicationId" element={<VisaConfirmation />} />
+              <Route path="/visas/:countryId" element={<VisaDetail />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<AdminDashboard />} />

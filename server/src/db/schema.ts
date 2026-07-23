@@ -188,6 +188,35 @@ export const cruiseBookings = pgTable("cruise_bookings", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// A visa application — like cruises, priced from a curated static catalog
+// (lib/visaCountries.ts, source of truth on both client and server, see
+// routes/visas.ts) since no government or visa-processor API exists.
+// Unlike every other vertical, status defaults to "submitted" rather than
+// "confirmed" — a real visa outcome isn't instant or guaranteed, so this is
+// the one place the status language is explicit about that.
+export const visaApplications = pgTable("visa_applications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // Nullable — attaching to a trip is optional, see TripPicker.tsx.
+  tripId: uuid("trip_id").references(() => trips.id),
+  countryId: text("country_id").notNull(),
+  countryName: text("country_name").notNull(), // snapshot
+  visaType: text("visa_type").notNull(),
+  travelDate: text("travel_date"), // YYYY-MM-DD, optional
+  // JSON.stringify({ name, passportNumber }[]) — same pattern as
+  // insurancePolicies.travelersJson.
+  applicantsJson: text("applicants_json").notNull(),
+  govFeeInr: numeric("gov_fee_inr").notNull(), // per applicant, snapshot
+  serviceFeeInr: numeric("service_fee_inr").notNull(), // per applicant, snapshot
+  totalFeeInr: numeric("total_fee_inr").notNull(), // (govFee + serviceFee) * applicantCount
+  guestName: text("guest_name").notNull(),
+  guestEmail: text("guest_email").notNull(),
+  guestPhone: text("guest_phone").notNull(),
+  status: text("status").notNull().default("submitted"),
+  applicationReference: text("application_reference").notNull(),
+  cancelToken: text("cancel_token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Cabs have no external booking system at all (see lib/routing.ts) — this
 // table is the sole record of a ride, priced from a local rate table
 // against a real route (Nominatim geocoding + OSRM driving distance).

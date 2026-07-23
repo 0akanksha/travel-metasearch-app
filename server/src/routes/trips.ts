@@ -1,7 +1,16 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { cabBookings, cruiseBookings, forexOrders, hotelBookings, insurancePolicies, tripFlights, trips } from "../db/schema.js";
+import {
+  cabBookings,
+  cruiseBookings,
+  forexOrders,
+  hotelBookings,
+  insurancePolicies,
+  tripFlights,
+  trips,
+  visaApplications,
+} from "../db/schema.js";
 
 export const tripsRouter = Router();
 
@@ -151,6 +160,29 @@ function serializeCruiseBooking(booking: typeof cruiseBookings.$inferSelect) {
   };
 }
 
+// Same shape routes/visas.ts's serializeApplication produces — kept in sync
+// manually since this is the only other place that reads visaApplications.
+function serializeVisaApplication(app: typeof visaApplications.$inferSelect) {
+  return {
+    id: app.id,
+    countryId: app.countryId,
+    countryName: app.countryName,
+    visaType: app.visaType,
+    travelDate: app.travelDate,
+    applicants: JSON.parse(app.applicantsJson) as { name: string; passportNumber: string }[],
+    govFeeInr: Number(app.govFeeInr),
+    serviceFeeInr: Number(app.serviceFeeInr),
+    totalFeeInr: Number(app.totalFeeInr),
+    guestName: app.guestName,
+    guestEmail: app.guestEmail,
+    guestPhone: app.guestPhone,
+    status: app.status,
+    applicationReference: app.applicationReference,
+    cancelToken: app.cancelToken,
+    createdAt: app.createdAt.toISOString(),
+  };
+}
+
 tripsRouter.get("/", async (req, res) => {
   const email = typeof req.query.email === "string" ? req.query.email : "";
   if (!email) return res.status(400).json({ error: "email is required" });
@@ -162,15 +194,25 @@ tripsRouter.get("/", async (req, res) => {
 
   const withCounts = await Promise.all(
     tripRows.map(async (trip) => {
-      const [flightCount, hotelCount, cabCount, forexCount, insuranceCount, cruiseCount] = await Promise.all([
+      const [flightCount, hotelCount, cabCount, forexCount, insuranceCount, cruiseCount, visaCount] = await Promise.all([
         db.query.tripFlights.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.hotelBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.cabBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.forexOrders.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.insurancePolicies.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.cruiseBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
+        db.query.visaApplications.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
       ]);
-      return { ...serializeTrip(trip), flightCount, hotelCount, cabCount, forexCount, insuranceCount, cruiseCount };
+      return {
+        ...serializeTrip(trip),
+        flightCount,
+        hotelCount,
+        cabCount,
+        forexCount,
+        insuranceCount,
+        cruiseCount,
+        visaCount,
+      };
     }),
   );
 
@@ -216,13 +258,14 @@ tripsRouter.get("/:id", async (req, res) => {
   const trip = await findOwnedTrip(req.params.id, email);
   if (!trip) return res.status(404).json({ error: "Trip not found" });
 
-  const [flights, hotels, cabs, forex, insurance, cruises] = await Promise.all([
+  const [flights, hotels, cabs, forex, insurance, cruises, visas] = await Promise.all([
     db.query.tripFlights.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.hotelBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.cabBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.forexOrders.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.insurancePolicies.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.cruiseBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
+    db.query.visaApplications.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
   ]);
 
   res.json({
@@ -233,6 +276,7 @@ tripsRouter.get("/:id", async (req, res) => {
     forexOrders: forex.map(serializeForexOrder),
     insurancePolicies: insurance.map(serializeInsurancePolicy),
     cruiseBookings: cruises.map(serializeCruiseBooking),
+    visaApplications: visas.map(serializeVisaApplication),
   });
 });
 

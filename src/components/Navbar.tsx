@@ -19,6 +19,7 @@ const BOOK_LINKS: { to: string; label: string }[] = [
   { to: "/forex", label: "Forex Card" },
   { to: "/insurance", label: "Insurance" },
   { to: "/cruises", label: "Cruises" },
+  { to: "/visas", label: "Visa" },
 ];
 
 const SECONDARY_LINKS: { to: string; label: string }[] = [

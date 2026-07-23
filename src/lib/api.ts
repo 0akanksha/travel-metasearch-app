@@ -17,6 +17,8 @@ import type {
   OfferSummary,
   Place,
   PriceAlert,
+  VisaApplicant,
+  VisaApplication,
   TripDetail,
   TripFlight,
   TripSummary,
@@ -491,6 +493,48 @@ export async function cancelCruiseBooking(id: string, token: string): Promise<bo
   }
 }
 
+// --- Visa Services ---
+
+export interface ApplyForVisaInput {
+  countryId: string;
+  travelDate?: string;
+  applicants: VisaApplicant[];
+  guest: { name: string; email: string; phone: string };
+  tripId?: string;
+}
+
+export async function applyForVisa(
+  input: ApplyForVisaInput,
+): Promise<{ ok: true; application: VisaApplication } | { ok: false; error: string }> {
+  try {
+    const { application } = await apiFetch<{ application: VisaApplication }>("/visas/application", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return { ok: true, application };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Application failed" };
+  }
+}
+
+export async function getVisaApplicationsByEmail(email: string): Promise<VisaApplication[]> {
+  try {
+    const { applications } = await apiFetch<{ applications: VisaApplication[] }>(`/visas/applications?email=${encodeURIComponent(email)}`);
+    return applications;
+  } catch {
+    return [];
+  }
+}
+
+export async function cancelVisaApplication(id: string, token: string): Promise<boolean> {
+  try {
+    await apiFetch(`/visas/applications/${id}?token=${encodeURIComponent(token)}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // --- Trips ---
 
 export async function listTrips(email: string): Promise<TripSummary[]> {
@@ -598,4 +642,9 @@ export async function adminListInsurancePolicies(): Promise<InsurancePolicy[]> {
 export async function adminListCruiseBookings(): Promise<CruiseBooking[]> {
   const { bookings } = await apiFetch<{ bookings: CruiseBooking[] }>("/admin/cruises");
   return bookings;
+}
+
+export async function adminListVisaApplications(): Promise<VisaApplication[]> {
+  const { applications } = await apiFetch<{ applications: VisaApplication[] }>("/admin/visas");
+  return applications;
 }

@@ -231,6 +231,33 @@ export interface CruiseBooking {
   createdAt: string;
 }
 
+// --- Visa Services (server/src/routes/visas.ts) ---
+
+export interface VisaApplicant {
+  name: string;
+  passportNumber: string;
+}
+
+export interface VisaApplication {
+  id: string;
+  tripId?: string | null;
+  countryId: string;
+  countryName: string;
+  visaType: string;
+  travelDate: string | null;
+  applicants: VisaApplicant[];
+  govFeeInr: number;
+  serviceFeeInr: number;
+  totalFeeInr: number;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  status: string;
+  applicationReference: string;
+  cancelToken: string;
+  createdAt: string;
+}
+
 // --- Trips (server/src/routes/trips.ts) ---
 // Bundles a flight snapshot + hotel/cab bookings under one guest-owned
 // grouping. Flights have no local booking (FareCompass is metasearch-only
@@ -256,6 +283,7 @@ export interface TripSummary extends Trip {
   forexCount: number;
   insuranceCount: number;
   cruiseCount: number;
+  visaCount: number;
 }
 
 export interface TripFlight {
@@ -282,6 +310,7 @@ export interface TripDetail {
   forexOrders: ForexOrder[];
   insurancePolicies: InsurancePolicy[];
   cruiseBookings: CruiseBooking[];
+  visaApplications: VisaApplication[];
 }
 
 // What TripPicker.tsx reports back to the page hosting it — the page

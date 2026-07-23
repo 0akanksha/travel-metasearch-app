@@ -7,9 +7,18 @@ import {
   adminListForexOrders,
   adminListHotelBookings,
   adminListInsurancePolicies,
+  adminListVisaApplications,
   adminRecheckAlerts,
 } from "../lib/api";
-import type { CabBooking, CruiseBooking, ForexOrder, HotelBooking, InsurancePolicy, PriceAlert } from "../lib/types";
+import type {
+  CabBooking,
+  CruiseBooking,
+  ForexOrder,
+  HotelBooking,
+  InsurancePolicy,
+  PriceAlert,
+  VisaApplication,
+} from "../lib/types";
 import { formatDate, formatMoney, formatShortDate } from "../lib/format";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -22,6 +31,7 @@ export default function AdminDashboard() {
   const [forexOrders, setForexOrders] = useState<ForexOrder[]>([]);
   const [insurancePolicies, setInsurancePolicies] = useState<InsurancePolicy[]>([]);
   const [cruiseBookings, setCruiseBookings] = useState<CruiseBooking[]>([]);
+  const [visaApplications, setVisaApplications] = useState<VisaApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [rechecking, setRechecking] = useState(false);
@@ -35,14 +45,16 @@ export default function AdminDashboard() {
       adminListForexOrders(),
       adminListInsurancePolicies(),
       adminListCruiseBookings(),
+      adminListVisaApplications(),
     ])
-      .then(([a, h, c, f, i, cr]) => {
+      .then(([a, h, c, f, i, cr, v]) => {
         setAlerts(a);
         setHotelBookings(h);
         setCabBookings(c);
         setForexOrders(f);
         setInsurancePolicies(i);
         setCruiseBookings(cr);
+        setVisaApplications(v);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load dashboard data"))
       .finally(() => setLoading(false));
@@ -73,7 +85,8 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-2xl font-bold text-ink-950">Admin dashboard</h1>
           <p className="text-sm text-ink-900/60">
-            Price alerts, hotel bookings, cab bookings, forex orders, insurance policies, and cruise bookings from travelers.
+            Price alerts, hotel bookings, cab bookings, forex orders, insurance policies, cruise bookings, and visa
+            applications from travelers.
           </p>
         </div>
         <button
@@ -353,6 +366,49 @@ export default function AdminDashboard() {
                     <tr>
                       <td colSpan={7} className="px-4 py-8 text-center text-ink-900/50">
                         No cruise bookings yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-lg font-bold text-ink-950">Visa applications</h2>
+            <div className="overflow-x-auto rounded-xl border border-ink-900/10 bg-white">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-ink-900/10 text-xs uppercase tracking-wide text-ink-900/50">
+                  <tr>
+                    <th className="px-4 py-3">Guest</th>
+                    <th className="px-4 py-3">Country &amp; type</th>
+                    <th className="px-4 py-3">Applicants</th>
+                    <th className="px-4 py-3">Total (INR)</th>
+                    <th className="px-4 py-3">Reference</th>
+                    <th className="px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visaApplications.map((a) => (
+                    <tr key={a.id} className="border-b border-ink-900/5 last:border-0">
+                      <td className="px-4 py-3">
+                        {a.guestName}
+                        <div className="text-xs text-ink-900/50">{a.guestEmail}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {a.countryName}
+                        <div className="text-xs text-ink-900/50">{a.visaType}</div>
+                      </td>
+                      <td className="px-4 py-3">{a.applicants.length}</td>
+                      <td className="px-4 py-3">{formatMoney(a.totalFeeInr, "INR")}</td>
+                      <td className="px-4 py-3 font-mono text-xs">{a.applicationReference}</td>
+                      <td className="px-4 py-3 capitalize">{a.status}</td>
+                    </tr>
+                  ))}
+                  {visaApplications.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-ink-900/50">
+                        No visa applications yet.
                       </td>
                     </tr>
                   )}
