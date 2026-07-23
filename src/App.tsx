@@ -28,6 +28,10 @@ import ForexOrders from "./pages/ForexOrders";
 import Insurance from "./pages/Insurance";
 import InsuranceConfirmation from "./pages/InsuranceConfirmation";
 import InsurancePolicies from "./pages/InsurancePolicies";
+import Cruises from "./pages/Cruises";
+import CruiseDetail from "./pages/CruiseDetail";
+import CruiseConfirmation from "./pages/CruiseConfirmation";
+import CruiseBookings from "./pages/CruiseBookings";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -63,6 +67,10 @@ export default function App() {
               <Route path="/insurance" element={<Insurance />} />
               <Route path="/insurance/policies" element={<InsurancePolicies />} />
               <Route path="/insurance/confirmation/:policyId" element={<InsuranceConfirmation />} />
+              <Route path="/cruises" element={<Cruises />} />
+              <Route path="/cruises/bookings" element={<CruiseBookings />} />
+              <Route path="/cruises/confirmation/:bookingId" element={<CruiseConfirmation />} />
+              <Route path="/cruises/:itineraryId" element={<CruiseDetail />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<AdminDashboard />} />

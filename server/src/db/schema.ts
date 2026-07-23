@@ -159,6 +159,35 @@ export const insurancePolicies = pgTable("insurance_policies", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// A cruise booking — like a hotel booking, this is entirely local, but
+// unlike hotels there's no external catalog API either (cruise lines don't
+// offer self-serve inventory/pricing APIs). itineraryId/cabin pricing
+// resolve against the curated catalog in lib/cruiseItineraries.ts, which is
+// the source of truth on both client and server (see routes/cruises.ts).
+export const cruiseBookings = pgTable("cruise_bookings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // Nullable — attaching to a trip is optional, see TripPicker.tsx.
+  tripId: uuid("trip_id").references(() => trips.id),
+  itineraryId: text("itinerary_id").notNull(),
+  itineraryTitle: text("itinerary_title").notNull(), // snapshot, in case catalog content changes later
+  shipName: text("ship_name").notNull(),
+  departurePort: text("departure_port").notNull(),
+  sailDate: text("sail_date").notNull(), // YYYY-MM-DD
+  nights: integer("nights").notNull(),
+  cabinTier: text("cabin_tier").notNull(), // "interior" | "oceanview" | "balcony" | "suite"
+  cabinLabel: text("cabin_label").notNull(),
+  guestCount: integer("guest_count").notNull(),
+  pricePerPersonUsd: numeric("price_per_person_usd").notNull(),
+  totalUsd: numeric("total_usd").notNull(),
+  guestName: text("guest_name").notNull(),
+  guestEmail: text("guest_email").notNull(),
+  guestPhone: text("guest_phone").notNull(),
+  status: text("status").notNull().default("confirmed"),
+  bookingReference: text("booking_reference").notNull(),
+  cancelToken: text("cancel_token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Cabs have no external booking system at all (see lib/routing.ts) — this
 // table is the sole record of a ride, priced from a local rate table
 // against a real route (Nominatim geocoding + OSRM driving distance).

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { cabBookings, forexOrders, hotelBookings, insurancePolicies, tripFlights, trips } from "../db/schema.js";
+import { cabBookings, cruiseBookings, forexOrders, hotelBookings, insurancePolicies, tripFlights, trips } from "../db/schema.js";
 
 export const tripsRouter = Router();
 
@@ -125,6 +125,32 @@ function serializeInsurancePolicy(policy: typeof insurancePolicies.$inferSelect)
   };
 }
 
+// Same shape routes/cruises.ts's serializeBooking produces — kept in sync
+// manually since this is the only other place that reads cruiseBookings.
+function serializeCruiseBooking(booking: typeof cruiseBookings.$inferSelect) {
+  return {
+    id: booking.id,
+    itineraryId: booking.itineraryId,
+    itineraryTitle: booking.itineraryTitle,
+    shipName: booking.shipName,
+    departurePort: booking.departurePort,
+    sailDate: booking.sailDate,
+    nights: booking.nights,
+    cabinTier: booking.cabinTier,
+    cabinLabel: booking.cabinLabel,
+    guestCount: booking.guestCount,
+    pricePerPersonUsd: Number(booking.pricePerPersonUsd),
+    totalUsd: Number(booking.totalUsd),
+    guestName: booking.guestName,
+    guestEmail: booking.guestEmail,
+    guestPhone: booking.guestPhone,
+    status: booking.status,
+    bookingReference: booking.bookingReference,
+    cancelToken: booking.cancelToken,
+    createdAt: booking.createdAt.toISOString(),
+  };
+}
+
 tripsRouter.get("/", async (req, res) => {
   const email = typeof req.query.email === "string" ? req.query.email : "";
   if (!email) return res.status(400).json({ error: "email is required" });
@@ -136,14 +162,15 @@ tripsRouter.get("/", async (req, res) => {
 
   const withCounts = await Promise.all(
     tripRows.map(async (trip) => {
-      const [flightCount, hotelCount, cabCount, forexCount, insuranceCount] = await Promise.all([
+      const [flightCount, hotelCount, cabCount, forexCount, insuranceCount, cruiseCount] = await Promise.all([
         db.query.tripFlights.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.hotelBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.cabBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.forexOrders.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
         db.query.insurancePolicies.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
+        db.query.cruiseBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }).then((r) => r.length),
       ]);
-      return { ...serializeTrip(trip), flightCount, hotelCount, cabCount, forexCount, insuranceCount };
+      return { ...serializeTrip(trip), flightCount, hotelCount, cabCount, forexCount, insuranceCount, cruiseCount };
     }),
   );
 
@@ -189,12 +216,13 @@ tripsRouter.get("/:id", async (req, res) => {
   const trip = await findOwnedTrip(req.params.id, email);
   if (!trip) return res.status(404).json({ error: "Trip not found" });
 
-  const [flights, hotels, cabs, forex, insurance] = await Promise.all([
+  const [flights, hotels, cabs, forex, insurance, cruises] = await Promise.all([
     db.query.tripFlights.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.hotelBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.cabBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.forexOrders.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
     db.query.insurancePolicies.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
+    db.query.cruiseBookings.findMany({ where: (t, { eq: eqOp }) => eqOp(t.tripId, trip.id) }),
   ]);
 
   res.json({
@@ -204,6 +232,7 @@ tripsRouter.get("/:id", async (req, res) => {
     cabs: cabs.map(serializeCabBooking),
     forexOrders: forex.map(serializeForexOrder),
     insurancePolicies: insurance.map(serializeInsurancePolicy),
+    cruiseBookings: cruises.map(serializeCruiseBooking),
   });
 });
 

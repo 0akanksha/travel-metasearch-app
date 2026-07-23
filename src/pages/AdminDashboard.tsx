@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import {
   adminListAlerts,
   adminListCabBookings,
+  adminListCruiseBookings,
   adminListForexOrders,
   adminListHotelBookings,
   adminListInsurancePolicies,
   adminRecheckAlerts,
 } from "../lib/api";
-import type { CabBooking, ForexOrder, HotelBooking, InsurancePolicy, PriceAlert } from "../lib/types";
+import type { CabBooking, CruiseBooking, ForexOrder, HotelBooking, InsurancePolicy, PriceAlert } from "../lib/types";
 import { formatDate, formatMoney, formatShortDate } from "../lib/format";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -20,6 +21,7 @@ export default function AdminDashboard() {
   const [cabBookings, setCabBookings] = useState<CabBooking[]>([]);
   const [forexOrders, setForexOrders] = useState<ForexOrder[]>([]);
   const [insurancePolicies, setInsurancePolicies] = useState<InsurancePolicy[]>([]);
+  const [cruiseBookings, setCruiseBookings] = useState<CruiseBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [rechecking, setRechecking] = useState(false);
@@ -32,13 +34,15 @@ export default function AdminDashboard() {
       adminListCabBookings(),
       adminListForexOrders(),
       adminListInsurancePolicies(),
+      adminListCruiseBookings(),
     ])
-      .then(([a, h, c, f, i]) => {
+      .then(([a, h, c, f, i, cr]) => {
         setAlerts(a);
         setHotelBookings(h);
         setCabBookings(c);
         setForexOrders(f);
         setInsurancePolicies(i);
+        setCruiseBookings(cr);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load dashboard data"))
       .finally(() => setLoading(false));
@@ -69,7 +73,7 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-2xl font-bold text-ink-950">Admin dashboard</h1>
           <p className="text-sm text-ink-900/60">
-            Price alerts, hotel bookings, cab bookings, forex orders, and insurance policies from travelers.
+            Price alerts, hotel bookings, cab bookings, forex orders, insurance policies, and cruise bookings from travelers.
           </p>
         </div>
         <button
@@ -304,6 +308,51 @@ export default function AdminDashboard() {
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-ink-900/50">
                         No insurance policies yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-lg font-bold text-ink-950">Cruise bookings</h2>
+            <div className="overflow-x-auto rounded-xl border border-ink-900/10 bg-white">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-ink-900/10 text-xs uppercase tracking-wide text-ink-900/50">
+                  <tr>
+                    <th className="px-4 py-3">Guest</th>
+                    <th className="px-4 py-3">Ship &amp; itinerary</th>
+                    <th className="px-4 py-3">Cabin</th>
+                    <th className="px-4 py-3">Guests</th>
+                    <th className="px-4 py-3">Total (USD)</th>
+                    <th className="px-4 py-3">Reference</th>
+                    <th className="px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cruiseBookings.map((b) => (
+                    <tr key={b.id} className="border-b border-ink-900/5 last:border-0">
+                      <td className="px-4 py-3">
+                        {b.guestName}
+                        <div className="text-xs text-ink-900/50">{b.guestEmail}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {b.shipName}
+                        <div className="text-xs text-ink-900/50">{b.itineraryTitle}</div>
+                      </td>
+                      <td className="px-4 py-3">{b.cabinLabel}</td>
+                      <td className="px-4 py-3">{b.guestCount}</td>
+                      <td className="px-4 py-3">{formatMoney(b.totalUsd, "USD")}</td>
+                      <td className="px-4 py-3 font-mono text-xs">{b.bookingReference}</td>
+                      <td className="px-4 py-3 capitalize">{b.status}</td>
+                    </tr>
+                  ))}
+                  {cruiseBookings.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-ink-900/50">
+                        No cruise bookings yet.
                       </td>
                     </tr>
                   )}

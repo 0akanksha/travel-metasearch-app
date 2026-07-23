@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { AlertTriangle, BedDouble, Car, CreditCard, ExternalLink, Plane, Plus, ShieldCheck, Trash2 } from "lucide-react";
-import { cancelCabBooking, cancelForexOrder, cancelHotelBooking, cancelInsurancePolicy, getTrip } from "../lib/api";
-import type { CabBooking, ForexOrder, HotelBooking, InsurancePolicy, TripDetail as TripDetailType } from "../lib/types";
+import { AlertTriangle, BedDouble, Car, CreditCard, ExternalLink, Plane, Plus, Ship, ShieldCheck, Trash2 } from "lucide-react";
+import { cancelCabBooking, cancelCruiseBooking, cancelForexOrder, cancelHotelBooking, cancelInsurancePolicy, getTrip } from "../lib/api";
+import type { CabBooking, CruiseBooking, ForexOrder, HotelBooking, InsurancePolicy, TripDetail as TripDetailType } from "../lib/types";
 import { formatDate, formatMoney, formatShortDate } from "../lib/format";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -77,6 +77,16 @@ export default function TripDetail() {
     }
   }
 
+  async function handleCancelCruise(booking: CruiseBooking) {
+    const ok = await cancelCruiseBooking(booking.id, booking.cancelToken);
+    if (ok && trip) {
+      setTrip({
+        ...trip,
+        cruiseBookings: trip.cruiseBookings.map((b) => (b.id === booking.id ? { ...b, status: "cancelled" } : b)),
+      });
+    }
+  }
+
   const { destinationLabel, destinationRegionId, startDate, endDate } = trip.trip;
 
   const hotelsHref = destinationRegionId
@@ -112,6 +122,8 @@ export default function TripDetail() {
     ...(startDate ? { travelDate: startDate } : {}),
     email: trip.trip.email,
   }).toString()}`;
+
+  const cruisesHref = `/cruises?${new URLSearchParams({ email: trip.trip.email }).toString()}`;
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
@@ -351,6 +363,51 @@ export default function TripDetail() {
                     <button
                       onClick={() => handleCancelInsurance(policy)}
                       aria-label="Cancel insurance policy"
+                      className="rounded-lg p-2 text-ink-900/40 transition hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-ink-900/60">
+              <Ship className="h-4 w-4" /> Cruise
+            </h2>
+            <Link
+              to={cruisesHref}
+              className="flex items-center gap-1.5 rounded-lg border border-coral-500/30 bg-coral-500/10 px-3 py-1.5 text-xs font-bold text-coral-600 transition hover:bg-coral-500/20"
+            >
+              <Plus className="h-3.5 w-3.5" /> Browse cruises for this trip
+            </Link>
+          </div>
+          <div className="flex flex-col gap-3">
+            {trip.cruiseBookings.length === 0 && (
+              <p className="rounded-xl border border-dashed border-ink-900/15 py-6 text-center text-sm text-ink-900/60">
+                No cruise booked yet.
+              </p>
+            )}
+            {trip.cruiseBookings.map((booking) => (
+              <div key={booking.id} className="rounded-xl border border-ink-900/10 bg-white p-5">
+                <p className="font-bold text-ink-950">
+                  {booking.itineraryTitle}
+                  {booking.status === "cancelled" && <span className="ml-2 text-xs font-normal text-red-600">Cancelled</span>}
+                </p>
+                <p className="text-sm text-ink-900/70">
+                  {booking.shipName} &middot; {formatShortDate(booking.sailDate)} &middot; {booking.cabinLabel} &middot;{" "}
+                  {booking.guestCount} guest{booking.guestCount === 1 ? "" : "s"}
+                </p>
+                <div className="mt-3 flex items-center justify-between">
+                  <p className="text-lg font-extrabold text-ink-950">{formatMoney(booking.totalUsd, "USD")}</p>
+                  {booking.status !== "cancelled" && (
+                    <button
+                      onClick={() => handleCancelCruise(booking)}
+                      aria-label="Cancel cruise booking"
                       className="rounded-lg p-2 text-ink-900/40 transition hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />

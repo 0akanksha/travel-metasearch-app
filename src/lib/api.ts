@@ -3,6 +3,7 @@ import type {
   CabEstimate,
   CalendarDay,
   DestinationDeal,
+  CruiseBooking,
   ForexCurrency,
   ForexOrder,
   GeoPlace,
@@ -449,6 +450,47 @@ export async function cancelInsurancePolicy(id: string, token: string): Promise<
   }
 }
 
+// --- Cruises ---
+
+export interface BookCruiseInput {
+  itineraryId: string;
+  cabinTier: string;
+  sailDate: string;
+  guestCount: number;
+  guest: { name: string; email: string; phone: string };
+  tripId?: string;
+}
+
+export async function bookCruise(input: BookCruiseInput): Promise<{ ok: true; booking: CruiseBooking } | { ok: false; error: string }> {
+  try {
+    const { booking } = await apiFetch<{ booking: CruiseBooking }>("/cruises/booking", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return { ok: true, booking };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Booking failed" };
+  }
+}
+
+export async function getCruiseBookingsByEmail(email: string): Promise<CruiseBooking[]> {
+  try {
+    const { bookings } = await apiFetch<{ bookings: CruiseBooking[] }>(`/cruises/bookings?email=${encodeURIComponent(email)}`);
+    return bookings;
+  } catch {
+    return [];
+  }
+}
+
+export async function cancelCruiseBooking(id: string, token: string): Promise<boolean> {
+  try {
+    await apiFetch(`/cruises/bookings/${id}?token=${encodeURIComponent(token)}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // --- Trips ---
 
 export async function listTrips(email: string): Promise<TripSummary[]> {
@@ -551,4 +593,9 @@ export async function adminListForexOrders(): Promise<ForexOrder[]> {
 export async function adminListInsurancePolicies(): Promise<InsurancePolicy[]> {
   const { policies } = await apiFetch<{ policies: InsurancePolicy[] }>("/admin/insurance");
   return policies;
+}
+
+export async function adminListCruiseBookings(): Promise<CruiseBooking[]> {
+  const { bookings } = await apiFetch<{ bookings: CruiseBooking[] }>("/admin/cruises");
+  return bookings;
 }
